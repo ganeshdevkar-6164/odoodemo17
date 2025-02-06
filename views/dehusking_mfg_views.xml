@@ -1,0 +1,151 @@
+<odoo>
+    <data>
+
+        <!-- Agro Dehusking Order List View -->
+        <record id="view_agro_dehusking_order_tree" model="ir.ui.view">
+            <field name="name">agro.dehusking.tree</field>
+            <field name="model">agro.dehusking</field>
+            <field name="arch" type="xml">
+                <tree string="Dehusking Order">
+                    <field name="name"/>
+                    <field name="state"/>
+                    <field name="start_datetime"/>
+                </tree>
+            </field>
+        </record>
+
+        <!-- Agro Dehusking Order Form View -->
+        <record id="view_agro_dehusking_order_form" model="ir.ui.view">
+            <field name="name">agro.dehusking.form</field>
+            <field name="model">agro.dehusking</field>
+            <field name="arch" type="xml">
+                <form string="Dehusking Order">
+                    <header>
+                        <button name="start_process" type="object" string="Start Process" class="btn-primary" invisible="state != 'pending'"/>
+                        <field name="state" widget="statusbar" statusbar_visible="pending,in_progress,completed"/>
+                    </header>
+                    <sheet>
+                        <!-- Smart Buttons in a box -->
+                        <div class="oe_button_box" name="button_box">
+                            <button name="action_update" type="object" string="Update Quantities" class="oe_stat_button" icon="fa-truck" 
+                            invisible="state != 'in_progress' and state != 'completed'"/>
+                        </div>
+                        <group>
+                            <field name="name"/>
+                            <field name="state"/>
+                            <field name="start_datetime"/>
+                        </group>
+
+                        <notebook>
+                            <page string="Product Lines">
+                                <field name="dehusking_line_ids" nolabel="1">
+                                    <tree editable="bottom">
+                                        <field name="product_id"/>
+                                        <field name="available_quantity"/>
+                                        <field name="uom_id"/>
+                                    </tree>
+                                </field>
+                            </page>
+                        </notebook>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <!-- Agro Dehusking Details Form View -->
+        <record id="view_agro_dehusking_details_form" model="ir.ui.view">
+            <field name="name">agro.dehusking.details.form</field>
+            <field name="model">agro.dehusking.details</field>
+            <field name="arch" type="xml">
+                <form string="Dehusking Process Details">
+                    <header>
+                        <button name="action_confirm" type="object" string="Confirm" class="btn-primary" invisible="state != 'draft'"/>
+                        <field name="state" widget="statusbar" statusbar_visible="draft,done"/>
+                    </header>
+                    <sheet>
+                        <group>
+                            <field name="name"/>
+                            <field name="state"/>
+                            <!-- <field name="start_datetime"/> -->
+                        </group>
+
+                        <notebook>
+                            <page string="Dehusking Details">
+                                <field name="dehusking_details_line_ids" nolabel="1">
+                                    <tree editable="bottom">
+                                        <field name="product_id"/>
+                                        <field name="available_quantity"/>
+                                        <field name="uom_id"/>
+                                        <field name="remaining_quantity"/>
+                                        <field name="uom_id"/>
+                                        <field name="wastage_quantity"/>
+                                        <field name="uom_id"/>
+                                    </tree>
+                                </field>
+                            </page>
+                        </notebook>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <!-- Tree View for Aggregated Dehusking and Waste Stock -->
+        <record id="view_agro_dehusking_summary_tree" model="ir.ui.view">
+            <field name="name">agro.dehusking.summary.tree</field>
+            <field name="model">agro.dehusking.summary</field>
+            <field name="arch" type="xml">
+                <tree string="Aggregated Dehusking and Waste Stock">
+                    <!-- Display Product, Total Dehusking Stock, and Total Waste Stock -->
+                    <field name="product_id"/>
+                    <field name="total_dehusking_quantity"/>
+                    <field name="uom_id"/>
+                    <field name="total_waste_quantity"/>
+                    <field name="uom_id"/>
+                </tree>
+            </field>
+        </record>
+
+        <!-- Action to open the Tree View -->
+        <record id="action_agro_dehusking_summary" model="ir.actions.act_window">
+            <field name="name">Dehusking and Waste Stock Summary</field>
+            <field name="res_model">agro.dehusking.summary</field>
+            <field name="view_mode">tree</field>
+            <field name="target">current</field>
+        </record>
+
+    
+        <!-- Agro Dehusking Details Action -->
+        <record id="action_agro_dehusking_details" model="ir.actions.act_window">
+            <field name="name">Dehusking Process Details</field>
+            <field name="res_model">agro.dehusking.details</field>
+            <field name="view_mode">form</field>
+            <field name="target">new</field>
+        </record>
+
+        <!-- Menu Items -->
+        <menuitem id="agro_company_menu" name="Agro Company" sequence="1"/>
+        <menuitem id="mfg_menu" name="Manufacturing" parent="agro_company_menu" sequence="5"/>
+
+        <!-- Action to open the list view for Dehusking -->
+        <record id="action_agro_dehusking_order" model="ir.actions.act_window">
+            <field name="name">Dehusking</field>
+            <field name="res_model">agro.dehusking</field>
+            <field name="view_mode">tree,form</field>
+            <field name="target">current</field>
+        </record>
+
+        <!-- Submenu for Dehusking -->
+        <menuitem id="submenu_agro_dehusking_order"
+                  name="Dehusking"
+                  parent="mfg_menu"
+                  action="action_agro_dehusking_order"
+                  sequence="1"/>
+        
+        <!-- Menu Item to access the Dehusking Summary -->
+        <menuitem id="menu_agro_dehusking_summary" 
+                name="Dehusked Stock Summary" 
+                parent="mfg_menu" 
+                action="action_agro_dehusking_summary" 
+                sequence="2"/>
+    </data>
+</odoo>

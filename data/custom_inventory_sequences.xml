@@ -1,0 +1,96 @@
+<odoo>
+    <data>
+
+        <!-- Sales Order Sequence -->
+        <record id="sales_order_custom_sequence" model="ir.sequence">
+            <field name="name">Sales Order Custom</field>
+            <field name="code">sales.order.custom.sequence</field>
+            <field name="prefix">SO/</field>
+            <field name="padding">3</field> <!-- Adjusted padding for consistent format -->
+            <field name="company_id" eval="False"/> <!-- Increased padding for longer numbers --> 
+        </record>
+
+        <!-- Sales Invoice Sequence -->
+        <record id="sales_invoice_custom_sequence" model="ir.sequence">
+            <field name="name">Sales Invoice Custom</field>
+            <field name="code">sales.invoice.custom.sequence</field>
+            <field name="prefix">SINV/</field>
+            <field name="padding">3</field> <!-- Adjusted padding for consistent format -->
+            <field name="company_id" eval="False"/> <!-- Increased padding for longer numbers --> 
+        </record>
+
+        <!-- Sales Payment Sequence -->
+        <record id="sales_payment_custom_sequence" model="ir.sequence">
+            <field name="name">Sales Payment Custom</field>
+            <field name="code">sales.payment.custom.sequence</field>
+            <field name="prefix">SPAY/</field>
+            <field name="padding">3</field> <!-- Adjusted padding for consistent format -->
+            <field name="company_id" eval="False"/> <!-- Increased padding for longer numbers --> 
+        </record>
+
+
+        <!-- Sequence for Purchase Orders -->
+        <record id="purchase_order_custom_sequence" model="ir.sequence">
+            <field name="name">Purchase Order Custom</field>
+            <field name="code">purchase.order.custom.sequence</field>
+            <field name="prefix">PO/</field>
+            <field name="padding">3</field> <!-- Increased padding for longer numbers -->
+            <field name="company_id" eval="False"/> <!-- Increased padding for longer numbers --> 
+        </record>
+
+        <!-- Sequence for Receipts -->
+        <record id="receipt_custom_sequence" model="ir.sequence">
+            <field name="name">Receipt Custom</field>
+            <field name="code">receipt.custom.sequence</field>
+            <field name="prefix">RCP/</field>
+            <field name="padding">3</field> <!-- Increased padding for longer numbers -->
+            <field name="company_id" eval="False"/> <!-- Increased padding for longer numbers --> 
+        </record>
+
+        <!-- Sequence for Invoices -->
+        <record id="purchase_invoice_custom_sequence" model="ir.sequence">
+            <field name="name">Invoice Custom</field>
+            <field name="code">purchase.invoice.custom.sequence</field>
+            <field name="prefix">INV/</field>
+            <field name="padding">3</field> <!-- Increased padding for longer numbers -->
+            <field name="company_id" eval="False"/> <!-- Increased padding for longer numbers --> 
+        </record>
+
+        <!-- Sequence for Payments -->
+        <record id="purchase_payment_custom_sequence" model="ir.sequence">
+            <field name="name">Payment Custom</field>
+            <field name="code">purchase.payment.custom.sequence</field>
+            <field name="prefix">PAY/</field>
+            <field name="padding">3</field> <!-- Increased padding for longer numbers -->
+            <field name="company_id" eval="False"/> <!-- Increased padding for longer numbers --> 
+        </record>
+        
+        <!-- Sequence for Inventory transfer -->
+        <record id="inventory_transfer_custom_sequence" model="ir.sequence">
+            <field name="name">Inventory Transfer custom</field>
+            <field name="code">inventory.transfer.custom.sequence</field>
+            <field name="prefix">BT/</field>
+            <field name="padding">3</field> <!-- Increased padding for longer numbers -->
+            <field name="company_id" eval="False"/> <!-- Increased padding for longer numbers --> 
+        </record>
+
+        <!-- Sequence for Dehusking -->
+        <record id="agro_dehusking_custom_sequence" model="ir.sequence">
+            <field name="name">Dehusking custom</field>
+            <field name="code">agro.dehusking.custom.sequence</field>
+            <field name="prefix">DH/</field>
+            <field name="padding">3</field> <!-- Increased padding for longer numbers -->
+            <field name="company_id" eval="False"/> <!-- Increased padding for longer numbers --> 
+        </record>
+
+        <!-- Sequence for mfg cutting -->
+        <record id="mfg_cutting_custom_sequence" model="ir.sequence">
+            <field name="name">Cutting custom</field>
+            <field name="code">mfg.cutting.custom.sequence</field>
+            <field name="prefix">CT/</field>
+            <field name="padding">3</field> <!-- Increased padding for longer numbers -->
+            <field name="company_id" eval="False"/> <!-- Increased padding for longer numbers --> 
+        </record>
+        
+    </data>
+</odoo>

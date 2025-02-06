@@ -1,0 +1,186 @@
+<odoo>
+
+    <!-- Views for Sales Order (Form View) -->
+    <record id="view_sales_order_form_custom" model="ir.ui.view">
+        <field name="name">sale.order.custom.form</field>
+        <field name="model">sale.order.custom</field>
+        <field name="arch" type="xml">
+            <form string="Sales Order">
+                <header>
+                    <button name="action_confirm" string="Confirm" type="object" class="oe_highlight" invisible="state != 'draft'"/>
+                    <button name="action_cancel" string="Cancel" type="object" class="oe_link" invisible="state != 'sale_order'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,sale_order,cancelled"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_create_invoice" type="object" string="Create Invoice" class="oe_stat_button" icon="fa-file-invoice" invisible="state != 'sale_order'"/>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="customer_id"/>
+                            <field name="order_date"/>
+                        </group>
+                        <group>
+                            <field name="total_amount"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Order Lines">
+                            <field name="order_line">
+                                <tree editable="bottom">
+                                    <field name="product_category_id"/>
+                                    <field name="product_id"/>
+                                    <field name="product_qty"/>
+                                    <field name="uom_id"/>
+                                    <field name="price_unit"/>
+                                    <field name="subtotal"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Views for Sales Order Tree/List -->
+    <record id="view_sales_order_tree_custom" model="ir.ui.view">
+        <field name="name">sale.order.custom.tree</field>
+        <field name="model">sale.order.custom</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="name"/>
+                <field name="customer_id"/>
+                <field name="order_date"/>
+                <field name="state"/>
+                <field name="total_amount"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Views for Sales Invoice (Form View) -->
+    <record id="view_sales_invoice_form_custom" model="ir.ui.view">
+        <field name="name">sale.invoice.custom.form</field>
+        <field name="model">sale.invoice.custom</field>
+        <field name="arch" type="xml">
+            <form string="Sales Invoice">
+                <header>
+                    <button name="action_post" string="Register Payment" type="object" class="oe_highlight" invisible="state != 'draft'"/>
+                    <button name="action_cancel" string="Cancel" type="object" class="oe_link" invisible="state != 'posted'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,posted,cancelled"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_create_payment" type="object" string="Payment" class="oe_stat_button" icon="fa-credit-card" invisible="state != 'posted'"/>
+                    </div>
+                    <group>
+                        <field name="name"/>
+                        <field name="sale_order_id"/>
+                        <field name="total_amount"/>
+                        <field name="customer_id"/>
+                        <field name="invoice_date"/>
+                    </group>
+                    <notebook>
+                        <page string="Invoice Lines">
+                            <field name="order_line_ids" nolabel="1">
+                                <tree> 
+                                    <field name="product_category_id"/>
+                                    <field name="product_id"/>
+                                    <field name="product_qty"/>
+                                    <field name="uom_id"/>
+                                    <field name="price_unit"/>
+                                    <field name="subtotal"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Views for Sales Invoice Tree/List -->
+    <record id="view_sales_invoice_tree_custom" model="ir.ui.view">
+        <field name="name">sale.invoice.custom.tree</field>
+        <field name="model">sale.invoice.custom</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="name"/>
+                <field name="sale_order_id"/>
+                <field name="total_amount"/>
+                <field name="invoice_date"/>
+                <field name="state"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Views for Sales Payment (Form View) -->
+    <record id="view_sales_payment_form_custom" model="ir.ui.view">
+        <field name="name">sale.payment.custom.form</field>
+        <field name="model">sale.payment.custom</field>
+        <field name="arch" type="xml">
+            <form string="Sales Payment">
+                <header>
+                    <button name="action_post" string="Pay" type="object" class="oe_highlight" invisible="state != 'draft'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,paid,cancelled"/>
+                </header>
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="invoice_id"/>
+                        <field name="payment_date"/>
+                        <field name="amount"/>
+                        <field name="customer_id"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Views for Sales Payment Tree/List -->
+    <record id="view_sales_payment_tree_custom" model="ir.ui.view">
+        <field name="name">sale.payment.custom.tree</field>
+        <field name="model">sale.payment.custom</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="name"/>
+                <field name="invoice_id"/>
+                <field name="payment_date"/>
+                <field name="amount"/>
+                <field name="state"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Menu Items -->
+    <menuitem id="agro_company_menu" name="Agro Company" sequence="1"/>
+    <menuitem id="sales_order_custom_menu" name="Sales Orders" parent="agro_company_menu" sequence="5"/>
+
+    <!-- Action for Sales Order -->
+    <record id="action_sales_order_custom" model="ir.actions.act_window">
+        <field name="name">Sales Orders</field>
+        <field name="res_model">sale.order.custom</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <!-- Action for Sales Invoice -->
+    <record id="action_sales_invoice_custom" model="ir.actions.act_window">
+        <field name="name">Invoices</field>
+        <field name="res_model">sale.invoice.custom</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <!-- Action for Sales Payment -->
+    <record id="action_sales_payment_custom" model="ir.actions.act_window">
+        <field name="name">Payments</field>
+        <field name="res_model">sale.payment.custom</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <!-- Linking Menu to Actions -->
+    <menuitem id="menu_sales_order_custom" name="Sales Orders" parent="sales_order_custom_menu" action="action_sales_order_custom" sequence="10"/>
+    <menuitem id="menu_sales_invoice_custom" name="Sales Invoices" parent="sales_order_custom_menu" action="action_sales_invoice_custom" sequence="20"/>
+    <menuitem id="menu_sales_payment_custom" name="Sales Payments" parent="sales_order_custom_menu" action="action_sales_payment_custom" sequence="30"/>
+
+</odoo>

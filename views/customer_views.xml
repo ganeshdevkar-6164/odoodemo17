@@ -1,0 +1,51 @@
+<odoo>
+    <!-- Customer Registration Form View -->
+    <record id="view_customer_registration_form" model="ir.ui.view">
+        <field name="name">customer.registration.form</field>
+        <field name="model">customer.registration</field>
+        <field name="arch" type="xml">
+            <form string="Customer Registration">
+                <sheet>
+                    <group>
+                        <field name="id"/>
+                        <field name="name" required="1"/>
+                        <field name="email"/>
+                        <field name="phone"/>
+                        <field name="address"/>
+                        <field name="registration_date"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Customer Registration List View -->
+    <record id="view_customer_registration_tree" model="ir.ui.view">
+        <field name="name">customer.registration.tree</field>
+        <field name="model">customer.registration</field>
+        <field name="arch" type="xml">
+            <tree string="Customer List">
+                <field name="id"/>
+                <field name="name"/>
+                <field name="email"/>
+                <field name="phone"/>
+                <field name="registration_date"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Action to Open Customer Registration Form -->
+    <record id="action_customer_registration" model="ir.actions.act_window">
+        <field name="name">Customer Registration</field>
+        <field name="res_model">customer.registration</field>
+        <field name="view_mode">tree,form</field> <!-- Allow both form and list views -->
+        <field name="target">current</field>
+    </record>
+
+    <!-- Menu Item for Custom UOM Configuration -->
+    <menuitem id="agro_company_config" parent="agro_company_menu" name="Configuration" sequence="6"/>
+
+    <!-- Submenu Item for Customer Registration -->
+    <menuitem id="customer_registration_menu" name="Customer" parent="agro_company_config" action="action_customer_registration" sequence="5"/>
+
+</odoo>

@@ -1,0 +1,117 @@
+<odoo>
+    <!-- Custom Product Views -->
+
+    <!-- Tree View for Products -->
+    <record id="view_custom_product_tree" model="ir.ui.view">
+        <field name="name">custom.product.tree</field>
+        <field name="model">custom.product</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="id"/>
+                <field name="name"/>
+                <field name="product_category_id"/>  <!-- Category Field -->
+                <field name="grade"/>  <!-- Grade Field -->
+                <field name="description"/>  <!-- Description Field -->
+                <field name="quantity"/>  <!-- On-hand Quantity -->
+                <field name="sales_price"/>  <!-- Sales Price -->
+                <field name="cost_price"/>  <!-- Cost Price -->
+                <field name="uom_id"/>  <!-- Unit of Measure -->
+            </tree>
+        </field>
+    </record>
+
+    <!-- Form View for Product Creation -->
+    <record id="view_custom_product_form" model="ir.ui.view">
+        <field name="name">custom.product.form</field>
+        <field name="model">custom.product</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_structure"/>
+                    <div class="row">
+                        <!-- First Column: Details Section -->
+                        <div class="col-6">
+                            <group>
+                                <field name="id"/>
+                                <field name="name"/>
+                                <field name="product_category_id"/>  <!-- Category Field -->
+                                <field name="grade"/>  <!-- Grade Field -->
+                                <field name="description"/>  <!-- Description Field -->
+                                <field name="quantity"/>  <!-- On-hand Quantity -->
+                            </group>
+                        </div>
+                        <!-- Second Column: Image Section -->
+                        <div class="col-6">
+                            <group>
+                                <field name="sales_price"/>  <!-- Sales Price -->
+                                <field name="cost_price"/>  <!-- Cost Price -->
+                                <field name="category_id"/>  <!-- UOM Category Field Added Here -->
+                                <field name="uom_id"/>  <!-- Unit of Measure -->
+                                <field name="image" widget="image" class="oe_avatar"/>
+                            </group>
+                        </div>
+                    </div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Kanban View for Products -->
+    <record id="view_custom_product_kanban" model="ir.ui.view">
+        <field name="name">custom.product.kanban</field>
+        <field name="model">custom.product</field>
+        <field name="arch" type="xml">
+            <kanban>
+                <field name="name"/>
+                <field name="product_category_id"/>  <!-- Category Field -->
+                <field name="grade"/>  <!-- Grade Field -->
+                <field name="quantity"/>  <!-- On-hand Quantity -->
+                <field name="sales_price"/>  <!-- Sales Price -->
+                <field name="cost_price"/>  <!-- Cost Price -->
+                <field name="uom_id"/>  <!-- Unit of Measure -->
+                <templates>
+                    <t t-name="kanban-box">
+                        <div class="o_kanban_record" style="display: flex; align-items: stretch; padding: 5px; margin: 0; border: 1px solid #ccc;">
+
+                            <!-- Product Image (40% width, full height) -->
+                            <div class="w-50 oe_kanban_global_click o_kanban_record_has_image_fill o_product_kanban_record" 
+                                style="flex: 1; position: relative; height: 100%; padding: 0; margin: 0;">
+                                <t t-if="record.image.raw_value">
+                                    <field name="image" class="o_kanban_image_fill_left d-block"
+                                        widget="background_image" options="{'zoom': true, 'zoom_delay': 1000}"
+                                        style="background-size: cover; background-position: center; height: 100%; width: 100%; padding: 0; margin: 0;"/>
+                                </t>
+                                <t t-elif="record.image.raw_value">
+                                    <field name="image" class="o_kanban_image_fill_left d-block"
+                                        widget="background_image" options="{'zoom': true, 'zoom_delay': 1000}"
+                                        style="background-size: cover; background-position: center; height: 100%; width: 100%; padding: 0; margin: 0;"/>
+                                </t>
+                            </div>
+
+                            <!-- Product Details (60% width, full height) -->
+                            <div class="w-50 o_kanban_details" style="flex: 1; height: 100%; padding: 5px; margin: 0;">
+                                <strong><span><field name="name"/></span></strong>
+                                <div><field name="product_category_id"/></div>  <!-- Category Field -->
+                                <div><field name="grade"/></div>  <!-- Grade Field -->
+                                <div>Sale Price: <field name="sales_price"/>/kg</div>  <!-- Show Sales Price -->
+                                <div>Qty: <field name="quantity"/> <field name="uom_id"/></div>  <!-- Show Quantity -->
+                                <div>Cost: <field name="cost_price"/>/kg</div>  <!-- Show Cost Price -->
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <!-- Actions -->
+    <record id="action_custom_product" model="ir.actions.act_window">
+        <field name="name">Custom Products</field>
+        <field name="res_model">custom.product</field>
+        <field name="view_mode">kanban,tree,form</field>
+    </record>
+
+    <!-- Menu Items -->
+    <menuitem id="agro_company_menu" name="Agro Company" sequence="1"/>
+    <menuitem id="menu_custom_product" name="Products" parent="agro_company_menu" action="action_custom_product" sequence="1"/>
+</odoo>

@@ -1,0 +1,153 @@
+<odoo>
+    <data>
+
+        <!-- Mfg Cutting Order List View -->
+        <record id="view_mfg_cutting_order_tree" model="ir.ui.view">
+            <field name="name">mfg.cutting.tree</field>
+            <field name="model">mfg.cutting</field>
+            <field name="arch" type="xml">
+                <tree string="Cutting Order">
+                    <field name="name"/>
+                    <field name="state"/>
+                    <field name="start_datetime"/>
+                </tree>
+            </field>
+        </record>
+
+        <!-- Mfg Cutting Order Form View -->
+        <record id="view_mfg_cutting_order_form" model="ir.ui.view">
+            <field name="name">mfg.cutting.form</field>
+            <field name="model">mfg.cutting</field>
+            <field name="arch" type="xml">
+                <form string="Cutting Order">
+                    <header>
+                        <button name="start_process" type="object" string="Start Process" class="btn-primary" invisible="state != 'pending'"/>
+                        <field name="state" widget="statusbar" statusbar_visible="pending,in_progress,completed"/>
+                    </header>
+                    <sheet>
+                        <!-- Smart Buttons in a box -->
+                        <div class="oe_button_box" name="button_box">
+                            <button name="action_update" type="object" string="Update Quantities" class="oe_stat_button" icon="fa-cogs" 
+                            invisible="state != 'in_progress' and state != 'completed'"/>
+                        </div>
+                        <group>
+                            <field name="name"/>
+                            <field name="state"/>
+                        </group>
+                        <group>
+                            <field name="cutting_type"/>
+                            <field name="start_datetime"/>
+                        </group>
+                        <notebook>
+                            <page string="Product Lines">
+                                <field name="cutting_line_ids" nolabel="1">
+                                    <tree editable="bottom">
+                                        <field name="product_id"/>
+                                        <field name="available_quantity"/>
+                                        <field name="uom_id"/>
+                                    </tree>
+                                </field>
+                            </page>
+                        </notebook>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <!-- Mfg Cutting Details Form View -->
+        <record id="view_mfg_cutting_details_form" model="ir.ui.view">
+            <field name="name">mfg.cutting.details.form</field>
+            <field name="model">mfg.cutting.details</field>
+            <field name="arch" type="xml">
+                <form string="Cutting Process Details">
+                    <header>
+                        <button name="action_confirm" type="object" string="Confirm" class="btn-primary" invisible="state != 'draft'"/>
+                        <field name="state" widget="statusbar" statusbar_visible="draft,done"/>
+                    </header>
+                    <sheet>
+                        <group>
+                            <field name="name"/>
+                            <field name="state"/>
+                        </group>
+
+                        <notebook>
+                            <page string="Cutting Details">
+                                <field name="cutting_details_line_ids" nolabel="1">
+                                    <tree editable="bottom">
+                                        <field name="product_id"/>
+                                        <field name="available_quantity"/>
+                                        <field name="uom_id"/>
+                                        <field name="remaining_quantity"/>
+                                        <field name="uom_id"/>
+                                        <field name="wastage_quantity"/>
+                                        <field name="uom_id"/>
+                                    </tree>
+                                </field>
+                            </page>
+                        </notebook>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <!-- Tree View for Aggregated Cutting and Waste Stock -->
+        <record id="view_mfg_cutting_summary_tree" model="ir.ui.view">
+            <field name="name">mfg.cutting.summary.tree</field>
+            <field name="model">mfg.cutting.summary</field>
+            <field name="arch" type="xml">
+                <tree string="Aggregated Cutting and Waste Stock">
+                    <!-- Display Product, Total Cutting Stock, and Total Waste Stock -->
+                    <field name="product_id"/>
+                    <field name="cutting_type"/>
+                    <field name="total_cutting_quantity"/>
+                    <field name="uom_id"/>
+                    <field name="total_waste_quantity"/>
+                    <field name="uom_id"/>
+
+                </tree>
+            </field>
+        </record>
+
+        <!-- Action to open the Tree View for Cutting Summary -->
+        <record id="action_mfg_cutting_summary" model="ir.actions.act_window">
+            <field name="name">Cutting and Waste Stock Summary</field>
+            <field name="res_model">mfg.cutting.summary</field>
+            <field name="view_mode">tree</field>
+            <field name="target">current</field>
+        </record>
+
+        <!-- Mfg Cutting Details Action -->
+        <record id="action_mfg_cutting_details" model="ir.actions.act_window">
+            <field name="name">Cutting Process Details</field>
+            <field name="res_model">mfg.cutting.details</field>
+            <field name="view_mode">form</field>
+            <field name="target">new</field>
+        </record>
+
+        <!-- Menu Items for Mfg Cutting -->
+        <menuitem id="agro_company_menu" name="Agro Company" sequence="1"/>
+        <menuitem id="mfg_menu" name="Manufacturing" parent="agro_company_menu" sequence="5"/>
+
+        <!-- Action to open the list view for Mfg Cutting -->
+        <record id="action_mfg_cutting_order" model="ir.actions.act_window">
+            <field name="name">Cutting</field>
+            <field name="res_model">mfg.cutting</field>
+            <field name="view_mode">tree,form</field>
+            <field name="target">current</field>
+        </record>
+
+        <!-- Submenu for Mfg Cutting -->
+        <menuitem id="submenu_mfg_cutting_order"
+                  name="Cutting"
+                  parent="mfg_menu"
+                  action="action_mfg_cutting_order"
+                  sequence="3"/>
+        
+        <!-- Menu Item to access the Cutting Summary -->
+        <menuitem id="menu_mfg_cutting_summary" 
+                name="Cutting Stock Summary" 
+                parent="mfg_menu" 
+                action="action_mfg_cutting_summary" 
+                sequence="4"/>
+    </data>
+</odoo>

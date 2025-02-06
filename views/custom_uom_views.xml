@@ -1,0 +1,45 @@
+<odoo>
+    <!-- Tree View (List view) for Custom UOM -->
+    <record id="view_custom_uom_tree" model="ir.ui.view">
+        <field name="name">custom.uom.tree</field>
+        <field name="model">custom.uom</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="name"/>  <!-- Field to display the name -->
+                <field name="category_id" widget="many2one" options="{'no_open': True}"/>  <!-- Display the category name (not ID) -->
+                <field name="description"/>  <!-- Field to display the description -->
+            </tree>
+        </field>
+    </record>
+
+    <!-- Form View for Custom UOM -->
+    <record id="view_custom_uom_form" model="ir.ui.view">
+        <field name="name">custom.uom.form</field>
+        <field name="model">custom.uom</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="name"/>  <!-- Field for the name of the unit -->
+                        <field name="category_id"/>  <!-- Field for the category -->
+                        <field name="description"/>  <!-- Field for the description -->
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Menu Item for Custom UOM Configuration -->
+    <menuitem id="agro_company_config" parent="agro_company_menu" name="Configuration" sequence="6"/>
+
+    <!-- Action to open the Custom UOM views -->
+    <record id="custom_uom_action" model="ir.actions.act_window">
+        <field name="name">Custom UOM</field>  <!-- The action name that will appear in the UI -->
+        <field name="res_model">custom.uom</field>  <!-- Model associated with the action -->
+        <field name="view_mode">tree,form</field>  <!-- Views to be displayed (Tree and Form) -->
+    </record>
+
+    <!-- Menu Item for Unit Of Measure -->
+    <menuitem id="custom_uom_menu" name="Unit Of Measure" parent="agro_company_config" action="custom_uom_action" sequence="3"/>
+
+</odoo>
