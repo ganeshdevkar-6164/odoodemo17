@@ -1,35 +1,29 @@
 {
-    'name': 'Agro Company',
-    'version': '1.0',
-    'category': 'Services',
-    'summary': 'A simple Agro Company system',
-    'author': 'Ganesh Devkar',
-    'depends': ['base','web','mail'],
+    'name': 'Vighnahar Agro',
+    'version': '1.2',
+    'category': 'Inventory/Purchase',
+    'summary': 'Vighnahar Agro',
+    'depends': ['base', 'web', 'mail','website_google_map','base_geolocalize'],
     'data': [
+         'views/menu_items.xml',
+         'security/ir.model.access.csv',
+         'views/product_views.xml',
+         'views/supplier_invoice_views.xml',
+         'views/uom_views.xml',
+         'views/party_views.xml',
+         'views/credit_memo_views.xml'
+        # 'data/sequence.xml',
         
-        'views/menu_views.xml',
-        'views/supplier_views.xml',
-        'views/customer_views.xml',
-        'views/custom_product_views.xml',
-        'views/custom_resource_views.xml',
-        'views/custom_uom_views.xml',
-        'views/inventory_stock_loc_views.xml',
-        'views/purchase_order_views.xml',
-        'views/sales_order_views.xml',
-        'views/custom_inventory_views.xml',
-        'views/inventory_transfer_views.xml',
-        # 'views/dehusking_mfg_views.xml',
-        # 'views/mfg_cutting_views.xml',
-        'data/custom_inventory_sequences.xml',
-        'security/ir.model.access.csv',  # Add the access control file here
-                
     ],
     'assets': {
         'web.assets_backend': [
-            'agro_company/static/src/css/custom_styles.css',
+            'vighnahar_agro/static/src/css/custom_styles.css',
+            'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css',
+            'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css',
         ],
+     
     },
     'installable': True,
     'application': True,
-    'sequence': 1,
+    'license': 'LGPL-3',
 }

@@ -1,0 +1,101 @@
+<odoo>
+    <data>
+<!-- Unit Of Measure Category  View-->
+        <record id="view_uom_category_form" model="ir.ui.view">
+            <field name="name">uom_category.form</field>
+            <field name="model">vighnahar_agro.uom_category</field>
+            <field name="arch" type="xml">
+                <form string="Unit of Measure Categories">
+                    <sheet>
+                        <group>
+                           <field name="name"/> 
+                        </group>
+                        <notebook>
+                            <page string="Unit of Measure">
+                                <field name="uom_ids" widget="one2many_list">
+                                    <tree editable="bottom">
+                                        <field name="name"/>
+                                        <field name="factor"/>
+                                        <field name="active"/>
+                                    </tree>
+                                </field>
+                            </page>
+                        </notebook>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+
+
+
+        <record id="view_uom_category_tree" model="ir.ui.view">
+            <field name="name">uom_category.tree</field>
+            <field name="model">vighnahar_agro.uom_category</field>
+            <field name="arch" type="xml">
+                <tree string="Unit of Measure Categories">
+                    <field name="name"/>
+                </tree>
+            </field>
+        </record>
+
+        <record id="action_uom_category_form" model="ir.actions.act_window">
+            <field name="name">Unit Of Measure Category</field>
+            <field name="res_model">vighnahar_agro.uom_category</field>
+            <field name="view_mode">tree,form</field>
+            <field name="view_id" ref="view_uom_category_tree"/>
+        </record>
+
+        <menuitem id="menu_uom_category" name="Unit Of Measure Category" parent="menu_configuration" action="action_uom_category_form" sequence="1"/>
+
+
+
+<!-- Attributes Variants View -->
+        <record id="view_attributes_form" model="ir.ui.view">
+            <field name="name">attributes.form</field>
+            <field name="model">vighnahar_agro.attributes</field>
+            <field name="arch" type="xml">
+                <form string="Attributes">
+                    <sheet>
+                        <group>
+                           <field name="name"/> 
+                        </group>
+                        <notebook>
+                            <page string="Attributes Lines">
+                                <field name="attributes_line_ids" widget="one2many_list">
+                                    <tree editable="bottom">
+                                        <field name="name"/>
+                                        <field name="is_custom"/>
+                                        <field name="default_extra_price"/>
+                                    </tree>
+                                </field>
+                            </page>
+                        </notebook>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+
+
+
+        <record id="view_attributes_tree" model="ir.ui.view">
+            <field name="name">attributes.tree</field>
+            <field name="model">vighnahar_agro.attributes</field>
+            <field name="arch" type="xml">
+                <tree string="Attributes">
+                    <field name="name"/>
+                </tree>
+            </field>
+        </record>
+
+        <record id="action_attributes_form" model="ir.actions.act_window">
+            <field name="name">Attributes</field>
+            <field name="res_model">vighnahar_agro.attributes</field>
+            <field name="view_mode">tree,form</field>
+            <field name="view_id" ref="view_attributes_tree"/>
+        </record>
+
+        <menuitem id="menu_attributes" name="Product Attributes" parent="menu_configuration" action="action_attributes_form" sequence="2"/>
+    </data>
+</odoo>

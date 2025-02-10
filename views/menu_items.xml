@@ -1,0 +1,16 @@
+<odoo>
+
+    <data>
+        
+        <menuitem id="menu_vighnahar_agro" name="Vighnahar Agro" sequence="1"/>
+
+        <menuitem id="menu_supplier" name="Supplier" parent = "menu_vighnahar_agro" sequence="4"/>
+
+        <menuitem id="menu_customer" name="Customer" parent = "menu_vighnahar_agro" sequence="5"/>
+
+
+        <menuitem id="menu_configuration" name="Configuration" parent = "menu_vighnahar_agro" sequence="6"/>
+
+    </data>
+
+</odoo>

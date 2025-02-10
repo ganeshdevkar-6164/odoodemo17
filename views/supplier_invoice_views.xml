@@ -1,0 +1,64 @@
+<odoo>
+    <record id="view_supplier_invoice_form" model="ir.ui.view">
+        <field name="name">supplier_invoice.form</field>
+        <field name="model">vighnahar_agro.supplier_invoice</field>
+        <field name="arch" type="xml">
+            <form string="Supplier Invoice">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="description"/>
+                            <field name="party_id"/>
+                        </group>
+                        <group>
+                            <field name="date"/>
+                            <field name="invoice_type"/>
+                            <field name="total_amount" readonly="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Invoice Lines">
+                            <field name="supplier_invoice_line_ids">
+                                <tree editable="bottom">
+                                    <field name="product_category_id" string="Product Category"/>
+                                    <field name="product_id" string="Product"/>
+                                    <field name="quantity" string="Quantity"/>
+                                    <field name="uom_id" string="UOM"/>
+                                    <field name="converted_quantity" string="Converted Quantity" optional = "hide"/>
+                                    <field name="converted_uom_id" string="Converted UOM" optional = "hide"/>
+                                    <field name="price" string="Unit Price"/>
+                                    <field name="total" string="Total Price" readonly="1"/>
+                                    <field name="uom_category_id" string="UOM Category" optional="hide"/>
+                                    
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_supplier_invoice_tree" model="ir.ui.view">
+        <field name="name">supplier_invoice.tree</field>
+        <field name="model">vighnahar_agro.supplier_invoice</field>
+        <field name="arch" type="xml">
+            <tree string="Supplier Invoices">
+                <field name="name" string="Name"/>
+                <field name="party_id" string="Party"/>
+                <field name="date" string="Date"/>
+                <field name="invoice_type" string="Invoice Type"/>
+                <field name="total_amount" string="Total Amount"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="action_supplier_invoice" model="ir.actions.act_window">
+        <field name="name">Supplier Invoices</field>
+        <field name="res_model">vighnahar_agro.supplier_invoice</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <menuitem id="menu_supplier_invoice" name="Supplier Invoices" parent="menu_supplier" action="action_supplier_invoice"/>
+</odoo>
