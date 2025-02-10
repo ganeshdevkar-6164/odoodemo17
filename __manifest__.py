@@ -18,8 +18,8 @@
         'views/sales_order_views.xml',
         'views/custom_inventory_views.xml',
         'views/inventory_transfer_views.xml',
-        'views/dehusking_mfg_views.xml',
-        'views/mfg_cutting_views.xml',
+        # 'views/dehusking_mfg_views.xml',
+        # 'views/mfg_cutting_views.xml',
         'data/custom_inventory_sequences.xml',
         'security/ir.model.access.csv',  # Add the access control file here
                 
