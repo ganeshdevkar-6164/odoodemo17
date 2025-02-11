@@ -6,6 +6,10 @@
             <field name="model">vighnahar_agro.party</field>
             <field name="arch" type="xml">
                 <form string="Party">
+                    <!-- <header>
+                        <field name="status" widget="statusbar" statusbar_visible="draft,registered"/>
+                        <button name="send_registration_sms" string="Register" type="object" class="btn-primary" states="draft"/>
+                    </header> -->
                     <sheet>
                         <group>
                             <group>
@@ -49,16 +53,15 @@
                             <page string = "Farm Details" invisible="party_type != 'farmer'">
                                 <field name="farm_details_ids" widget="one2many_list"  >
                                     <tree editable="bottom">
-                                        <field name="name"/> 
-                                        <field name="farm_location"/>
-                                        <field name="farm_area"/>
-                                        <field name="primary_uom"/>
-                                        <field name="farm_area1"/>
-                                        <field name="secondary_uom"/>
-                                        <field name="farm_area2"/>
-                                        <field name="conversion_uom"/>                                       
-                                        <field name="coordinates"/>
-                                        <field name="view_location" readonly="1" widget="url"/>
+                                        <field name="name" string="Name"/> 
+                                        <field name="farm_location" string="Farm Location"/>
+                                        <field name="quantity" string="Farm Area"/>
+                                        <field name="uom_id" string="UOM"/>
+                                        <field name="converted_quantity" string="Converted Quantity" optional = "hide"/>
+                                        <field name="converted_uom_id" string="Converted UOM" optional = "hide"/>
+                                        <field name="uom_category_id" string="UOM Category" optional = "hide"/>
+                                        <field name="coordinates" string="Coordinates"/>
+                                        <field name="view_location" readonly="1" widget="url" string="View Location"/>
                                     </tree>
                                 </field>
                             </page>
@@ -122,7 +125,19 @@
                                         <li t-if="record.email.raw_value" class="o_text_overflow">
                                             <i class="fa fa-fw me-2 fa-envelope text-primary" title="Email"/>
                                             <field name="email"/>
-                                        </li>    
+                                        </li>
+                                        <li t-if="record.is_supplier.raw_value">
+                                            <i class="fa fa-fw me-2 fa-truck text-primary" title="Supplier"/>
+                                            <field name="is_supplier" widget="boolean_button" options="{'terminology': 'label'}"/>
+                                        </li>
+                                        <li t-if="record.is_customer.raw_value">
+                                            <i class="fa fa-fw me-2 fa-user text-primary" title="Customer"/>
+                                            <field name="is_customer" widget="boolean_button" options="{'terminology': 'label'}"/>
+                                        </li>
+                                        <li t-if="record.party_type.raw_value">
+                                            <i class="fa fa-fw me-2 fa-tag text-primary" title="Party Type"/>
+                                            <field name="party_type"/>
+                                        </li>
                                     </ul>
                                 </div>
                             </div>

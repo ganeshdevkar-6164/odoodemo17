@@ -49,12 +49,13 @@ class FarmDetails(models.Model):
     party_id = fields.Many2one('vighnahar_agro.party', string='Party')
     name = fields.Char(string='Village')
     farm_location = fields.Char(string='Farm Location')
-    farm_area = fields.Float(string='Farm Area(acer)')
-    primary_uom = fields.Many2one('vighnahar_agro.uom', string='Primary UOM', default=lambda self: self.env['vighnahar_agro.uom'].search([('name', '=', 'Acer')], limit=1))
-    farm_area1 = fields.Float(string='Farm Area(Ha)')
-    secondary_uom = fields.Many2one('vighnahar_agro.uom', string='Secondary UOM', default=lambda self: self.env['vighnahar_agro.uom'].search([('name', '=', 'Hectare')], limit=1))
-    farm_area2 = fields.Float(string='Farm Area(gunta)')
-    conversion_uom = fields.Many2one('vighnahar_agro.uom', string='Convertion UOM', default=lambda self: self.env['vighnahar_agro.uom'].search([('name', '=', 'Guntha')], limit=1))
+    quantity = fields.Float(string='Farm Area')
+    uom_id = fields.Many2one('vighnahar_agro.uom', string='UOM'
+                             ,domain="[('category_id', '=', uom_category_id)]")
+    converted_quantity = fields.Float(string='Converted Quantity', digits=(16, 4), compute='_compute_converted_quantity', store=True)
+    converted_uom_id = fields.Many2one('vighnahar_agro.uom', string='Converted UOM', compute='_compute_converted_quantity', store=True) 
+    uom_category_id = fields.Many2one('vighnahar_agro.uom_category', string='UOM Category'
+                                      ,default=lambda self: self.env['vighnahar_agro.uom_category'].search([('name', '=', 'Farm Size')], limit=1)) 
     coordinates = fields.Char(string='Coordinates')
     view_location = fields.Char(string='View Location', compute='_compute_view_location', store=True)
 
@@ -66,37 +67,21 @@ class FarmDetails(models.Model):
             else:
                 record.view_location = ''
     
-
-    @api.onchange('farm_area')
-    def _onchange_farm_area(self):
-        if self.farm_area:
-            # Convert Acre to Hectare
-            self.farm_area1 = self.farm_area * 0.4047
-            # Convert Acre to Gunta
-            self.farm_area2 = self.farm_area * 40
-        else:
-            self.farm_area1 = 0.0
-            self.farm_area2 = 0.0
-
-    @api.onchange('farm_area1')
-    def _onchange_farm_area1(self):
-        if self.farm_area1:
-            # Convert Hectare to Acre
-            self.farm_area = self.farm_area1 * 2.471
-            # Convert Hectare to Gunta
-            self.farm_area2 = self.farm_area1 * 100
-        else:
-            self.farm_area = 0.0
-            self.farm_area2 = 0.0
-            
-            
-    @api.onchange('farm_area2')
-    def _onchange_farm_area2(self):
-        if self.farm_area2:
-            # Convert Gunta to Acre
-            self.farm_area = self.farm_area2 * 0.0247
-            # Convert Gunta to Hectare
-            self.farm_area1 = self.farm_area2 * 0.01
-        else:
-            self.farm_area = 0.0
-            self.farm_area1 = 0.0
+    
+    
+    @api.depends('quantity', 'uom_id', 'uom_category_id')
+    def _compute_converted_quantity(self):
+        for line in self:
+            if line.uom_category_id:
+                base_uom = self.env['vighnahar_agro.uom'].search([('category_id', '=', line.uom_category_id.id), ('factor', '=', 1)], limit=1)
+                if line.uom_id and base_uom:
+                    line.converted_quantity = line.quantity * line.uom_id.factor / base_uom.factor
+                    line.converted_uom_id = base_uom.id
+                else:
+                    line.converted_quantity = line.quantity
+                    line.converted_uom_id = base_uom.id if base_uom else False
+            else:
+                line.converted_quantity = line.quantity
+                line.converted_uom_id = False
+    
+    

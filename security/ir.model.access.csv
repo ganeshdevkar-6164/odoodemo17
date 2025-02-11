@@ -13,9 +13,9 @@ access_vighnahar_agro_party,vighnahar_agro.party,model_vighnahar_agro_party,,1,1
 
 access_vighnahar_agro_farm_details,vighnahar_agro.farm_details,model_vighnahar_agro_farm_details,,1,1,1,1
 
-access_vighnahar_agro_credit_memo,vighnahar_agro.credit_memo,model_vighnahar_agro_credit_memo,,1,1,1,1
-access_vighnahar_agro_supply_line,vighnahar_agro.supply_line,model_vighnahar_agro_supply_line,,1,1,1,1
 
 access_vighnahar_agro_supplier_invoice,vighnahar_agro.supplier_invoice,model_vighnahar_agro_supplier_invoice,,1,1,1,1
 access_vighnahar_agro_supplier_invoice_line,vighnahar_agro.supplier_invoice_line,model_vighnahar_agro_supplier_invoice_line,,1,1,1,1
 
+access_vighnahar_agro_customer_invoice,vighnahar_agro.customer_invoice,model_vighnahar_agro_customer_invoice,,1,1,1,1
+access_vighnahar_agro_customer_invoice_line,vighnahar_agro.customer_invoice_line,model_vighnahar_agro_customer_invoice_line,,1,1,1,1

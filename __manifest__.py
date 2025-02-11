@@ -9,9 +9,10 @@
          'security/ir.model.access.csv',
          'views/product_views.xml',
          'views/supplier_invoice_views.xml',
+         'views/customer_invoice_views.xml',
          'views/uom_views.xml',
          'views/party_views.xml',
-         'views/credit_memo_views.xml'
+        # 'views/credit_memo_views.xml'
         # 'data/sequence.xml',
         
     ],

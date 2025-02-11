@@ -22,8 +22,9 @@ class Product(models.Model):
     sales_price = fields.Float(string='Sales Price')
     cost_price = fields.Float(string='Cost Price')
     product_category_id = fields.Many2one('vighnahar_agro.product_category', string='Product Category')
-    uom_id = fields.Many2one('vighnahar_agro.uom' , string = "Unit Of Measures")
     category_id = fields.Many2one('vighnahar_agro.uom_category', string='Category')
+    uom_id = fields.Many2one('vighnahar_agro.uom' , string = "Unit Of Measures", domain="[('category_id', '=', category_id)]")
+    
     define_date = fields.Date(string = "Product Define", default=fields.Date.today)
     
     

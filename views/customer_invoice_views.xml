@@ -1,9 +1,9 @@
 <odoo>
-    <record id="view_supplier_invoice_form" model="ir.ui.view">
-        <field name="name">supplier_invoice.form</field>
-        <field name="model">vighnahar_agro.supplier_invoice</field>
+    <record id="view_customer_invoice_form" model="ir.ui.view">
+        <field name="name">customer_invoice.form</field>
+        <field name="model">vighnahar_agro.customer_invoice</field>
         <field name="arch" type="xml">
-            <form string="Supplier Invoice">
+            <form string="Customer Invoice">
                 <sheet>
                     <group>
                         <group>
@@ -19,7 +19,7 @@
                     </group>
                     <notebook>
                         <page string="Invoice Lines">
-                            <field name="supplier_invoice_line_ids">
+                            <field name="customer_invoice_line_ids">
                                 <tree editable="bottom">
                                     <field name="product_category_id" string="Product Category" domain="[('id', 'in', available_product_category_ids)]"/>
                                     <field name="product_id" string="Product"/>
@@ -40,9 +40,9 @@
         </field>
     </record>
 
-    <record id="view_supplier_invoice_tree" model="ir.ui.view">
-        <field name="name">supplier_invoice.tree</field>
-        <field name="model">vighnahar_agro.supplier_invoice</field>
+    <record id="view_customer_invoice_tree" model="ir.ui.view">
+        <field name="name">customer_invoice.tree</field>
+        <field name="model">vighnahar_agro.customer_invoice</field>
         <field name="arch" type="xml">
             <tree string="Supplier Invoices">
                 <field name="name" string="Name"/>
@@ -54,11 +54,12 @@
         </field>
     </record>
 
-    <record id="action_supplier_invoice" model="ir.actions.act_window">
-        <field name="name">Supplier Invoices</field>
-        <field name="res_model">vighnahar_agro.supplier_invoice</field>
+    <record id="action_customer_invoice" model="ir.actions.act_window">
+        <field name="name">Customer Invoices</field>
+        <field name="res_model">vighnahar_agro.customer_invoice</field>
         <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="view_customer_invoice_tree"/>
     </record>
 
-    <menuitem id="menu_supplier_invoice" name="Supplier Invoices" parent="menu_supplier" action="action_supplier_invoice"/>
+    <menuitem id="menu_customer_invoice" name="Customer Invoices" parent="menu_customer" action="action_customer_invoice"/>
 </odoo>
