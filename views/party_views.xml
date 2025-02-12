@@ -53,7 +53,7 @@
                             <page string = "Farm Details" invisible="party_type != 'farmer'">
                                 <field name="farm_details_ids" widget="one2many_list"  >
                                     <tree editable="bottom">
-                                        <field name="name" string="Name"/> 
+                                        <field name="name" string="Village"/> 
                                         <field name="farm_location" string="Farm Location"/>
                                         <field name="quantity" string="Farm Area"/>
                                         <field name="uom_id" string="UOM"/>

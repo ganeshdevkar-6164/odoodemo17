@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_standard_invoice_template">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <div class="page">
+                    <!-- Header Section -->
+                    <div class="header" style="display: flex; align-items: center; margin-bottom: 20px;">
+                        <div class="logo" style="flex: 1;">
+                            <!-- Replace with actual logo path -->
+                            <img src="/vighnahar_agro/static/src/img/logo.png" alt="Logo" style="max-height: 80px;"/>
+                        </div>
+                        <div class="company-details" style="flex: 2; text-align: right;">
+                            <h2 style="margin: 0; text-transform: uppercase;">Shree Vighnahar Prasanna</h2>
+                            <h3 style="margin: 0;">Shree Vaibhav V. Kavde</h3>
+                            <p style="margin: 0; font-weight: bold;">Vighnahar Agro</p>
+                            <p style="margin: 0;">Mobile: 9766512238, 8767200000</p>
+                        </div>
+                    </div>
+
+                    <!-- Invoice Details Section -->
+                    <div class="invoice-details" style="margin-bottom: 20px;">
+                        <h3 style="text-align: center; text-decoration: underline;">INVOICE</h3>
+                        <div style="display: flex; justify-content: space-between;">
+                            <div>
+                                <p>Invoice Number: <strong t-esc="o.name"/></p>
+                                <p>Supplier Number: <strong t-esc="o.customer_invoice_id.name"/></p>
+                            </div>
+                            <div>
+                                <p>Date: <strong t-esc="o.date.strftime('%d/%m/%Y')"/></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Invoice Lines Table -->
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid black;">
+                                <th style="padding: 8px; text-align: left;">Product</th>
+                                <th style="padding: 8px; text-align: center;">Quantity</th>
+                                <th style="padding: 8px; text-align: center;">UOM</th>
+                                <th style="padding: 8px; text-align: right;">Unit Price</th>
+                                <th style="padding: 8px; text-align: right;">Total Price</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-foreach="o.standard_invoice_line_ids" t-as="line">
+                                <tr style="border-bottom: 1px solid #ddd;">
+                                    <td style="padding: 8px;" t-esc="line.product_id.name"/>
+                                    <td style="padding: 8px; text-align: center;" t-esc="line.quantity"/>
+                                    <td style="padding: 8px; text-align: center;" t-esc="line.uom_id.name"/>
+                                    <td style="padding: 8px; text-align: right;" t-esc="'{:,.2f}'.format(line.price)"/>
+                                    <td style="padding: 8px; text-align: right;" t-esc="'{:,.2f}'.format(line.total)"/>
+                                </tr>
+                            </t>
+                        </tbody>
+                    </table>
+
+                    <!-- Footer Section -->
+                    <div class="footer" style="margin-top: 50px;">
+                        <div style="float: right; width: 200px; text-align: center;">
+                            <p style="border-top: 1px solid black; padding-top: 10px;">Signature</p>
+                        </div>
+                        <div style="clear: both;"></div>
+                        <p style="text-align: center; margin-top: 30px;">Thank You!</p>
+                    </div>
+                </div>
+            </t>
+        </t>
+    </template>
+</odoo>
+
+

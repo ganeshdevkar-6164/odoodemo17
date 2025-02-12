@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_standard_invoice" model="ir.actions.report">
+        <field name="name">Standard Invoice</field>
+        <field name="model">vighnahar_agro.standard_invoice</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">vighnahar_agro.report_standard_invoice_template</field>
+        <field name="report_file">vighnahar_agro.report_standard_invoice_template</field>
+        <field name="binding_model_id" ref="model_vighnahar_agro_standard_invoice"/>
+        <field name="binding_type">report</field>
+    </record>
+</odoo>

@@ -97,5 +97,42 @@
         </record>
 
         <menuitem id="menu_attributes" name="Product Attributes" parent="menu_configuration" action="action_attributes_form" sequence="2"/>
+
+
+        <!-- Product Category View -->
+        <record id="view_product_category_form" model="ir.ui.view">
+            <field name="name">product_category.form</field>
+            <field name="model">vighnahar_agro.product_category</field>
+            <field name="arch" type="xml">
+                <form string="Product Category">
+                    <sheet>
+                        <group>
+                            <field name="name"/>
+                            <field name="define_date"/>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <record id="view_product_category_tree" model="ir.ui.view">
+            <field name="name">product_category.tree</field>
+            <field name="model">vighnahar_agro.product_category</field>
+            <field name="arch" type="xml">
+                <tree string="Product Categories">
+                    <field name="name"/>
+                    <field name="define_date"/>
+                </tree>
+            </field>
+        </record>
+
+        <record id="action_product_category_form" model="ir.actions.act_window">
+            <field name="name">Product Category</field>
+            <field name="res_model">vighnahar_agro.product_category</field>
+            <field name="view_mode">tree,form</field>
+            <field name="view_id" ref="view_product_category_tree"/>
+        </record>
+
+        <menuitem id="menu_product_category" name="Product Category" parent="menu_configuration" action="action_product_category_form" sequence="3"/>
     </data>
 </odoo>

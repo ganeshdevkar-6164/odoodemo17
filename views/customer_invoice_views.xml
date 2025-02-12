@@ -4,6 +4,14 @@
         <field name="model">vighnahar_agro.customer_invoice</field>
         <field name="arch" type="xml">
             <form string="Customer Invoice">
+                <header>
+                    <button name="action_confirm" type="object" string="Confirm" 
+                            invisible="state != 'draft'" class="oe_highlight"/>
+                    <button name="action_invoice" type="object" string="Create Invoice" 
+                            invisible="state != 'sales_order'" class="oe_highlight"/>
+                    <button name="action_cancel" type="object" string="Cancel" class="btn-danger"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,sales_order"/>
+                </header>
                 <sheet>
                     <group>
                         <group>
@@ -25,12 +33,12 @@
                                     <field name="product_id" string="Product"/>
                                     <field name="quantity" string="Quantity"/>
                                     <field name="uom_id" string="UOM"/>
-                                    <field name="converted_quantity" string="Converted Quantity " optional = "hide"/>
-                                    <field name="converted_uom_id" string="Converted UOM" optional = "hide"/>
+                                    <field name="converted_quantity" string="Converted Quantity" optional="hide"/>
+                                    <field name="converted_uom_id" string="Converted UOM" optional="hide"/>
                                     <field name="price" string="Unit Price"/>
                                     <field name="total" string="Total Price" readonly="1"/>
                                     <field name="uom_category_id" string="UOM Category" optional="hide"/>
-                                    <field name="available_product_category_ids" optional = "hide"/>
+                                    <field name="available_product_category_ids" optional="hide"/>
                                 </tree>
                             </field>
                         </page>
@@ -44,12 +52,13 @@
         <field name="name">customer_invoice.tree</field>
         <field name="model">vighnahar_agro.customer_invoice</field>
         <field name="arch" type="xml">
-            <tree string="Supplier Invoices">
+            <tree string="Customer Invoices">
                 <field name="name" string="Name"/>
                 <field name="party_id" string="Party"/>
                 <field name="date" string="Date"/>
                 <field name="invoice_type" string="Invoice Type"/>
                 <field name="total_amount" string="Total Amount"/>
+                <field name="state" string="State"/>
             </tree>
         </field>
     </record>
@@ -62,4 +71,71 @@
     </record>
 
     <menuitem id="menu_customer_invoice" name="Customer Invoices" parent="menu_customer" action="action_customer_invoice"/>
+
+    <record id="view_standard_invoice_form" model="ir.ui.view">
+        <field name="name">standard_invoice.form</field>
+        <field name="model">vighnahar_agro.standard_invoice</field>
+        <field name="arch" type="xml">
+            <form string="Standard Invoice">
+                <header>
+                    <button name="%(action_report_standard_invoice)d" string="Print" type="action" class="btn-primary"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="customer_invoice_id"/>
+                            <field name="description"/>
+                            <field name="party_id"/>
+                        </group>
+                        <group>
+                            <field name="date"/>
+                            <field name="total_amount" readonly="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Invoice Lines">
+                            <field name="standard_invoice_line_ids">
+                                <tree editable="bottom">
+                                    <field name="product_category_id" string="Product Category"/>
+                                    <field name="product_id" string="Product"/>
+                                    <field name="quantity" string="Quantity"/>
+                                    <field name="uom_id" string="UOM"/>
+                                    <field name="converted_quantity" string="Converted Quantity" optional="hide"/>
+                                    <field name="converted_uom_id" string="Converted UOM" optional="hide"/>
+                                    <field name="price" string="Unit Price"/>
+                                    <field name="total" string="Total Price" readonly="1"/>
+                                    <field name="uom_category_id" string="UOM Category" optional="hide"/>
+                                    <field name="available_product_category_ids" optional="hide"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_standard_invoice_tree" model="ir.ui.view">
+        <field name="name">standard_invoice.tree</field>
+        <field name="model">vighnahar_agro.standard_invoice</field>
+        <field name="arch" type="xml">
+            <tree string="Standard Invoices">
+                <field name="name" string="Reference"/>
+                <field name="customer_invoice_id"/>
+                <field name="party_id" string="Party"/>
+                <field name="date" string="Date"/>
+                <field name="total_amount" string="Total Amount"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="action_standard_invoice" model="ir.actions.act_window">
+        <field name="name">Standard Invoices</field>
+        <field name="res_model">vighnahar_agro.standard_invoice</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="view_standard_invoice_tree"/>
+    </record>
+
+    <menuitem id="menu_standard_invoice" name="Standard Invoices" parent="menu_customer" action="action_standard_invoice"/>
 </odoo>
