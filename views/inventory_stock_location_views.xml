@@ -1,0 +1,44 @@
+<odoo>
+    <record id="view_warehouse_tree" model="ir.ui.view">
+        <field name="name">vighnahar.agro.warehouse.tree</field>
+        <field name="model">vighnahar_agro.warehouse</field>
+        <field name="arch" type="xml">
+            <tree string="Warehouse">
+                <field name="name"/>
+                <field name="short_name"/>
+                <field name="company"/>
+                <field name="address"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_warehouse_form" model="ir.ui.view">
+        <field name="name">vighnahar.agro.warehouse.form</field>
+        <field name="model">vighnahar_agro.warehouse</field>
+        <field name="arch" type="xml">
+            <form string="Warehouse">
+                <sheet>
+                    <group>
+                        <label for="name" string="Warehouse Name"/>
+                        <field name="name" class="oe_full_width"/>
+                        <group>
+                            <field name="short_name"/>
+                        </group>
+                        <group>
+                            <field name="company"/>
+                            <field name="address"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_vighnahar_agro_warehouse" model="ir.actions.act_window">
+        <field name="name">Warehouses</field>
+        <field name="res_model">vighnahar_agro.warehouse</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <menuitem id="menu_vighnahar_agro_warehouse" name="Warehouses" parent="menu_configuration" action="action_vighnahar_agro_warehouse"/>
+</odoo>

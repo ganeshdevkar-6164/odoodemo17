@@ -13,11 +13,9 @@
         'views/customer_invoice_views.xml',
         'views/uom_views.xml',
         'views/party_views.xml',
+        'views/inventory_stock_location_views.xml', 
         'report/customer_invoice_templates.xml',
         'report/report.xml',
-        
-        
-      
     ],
     'assets': {
         'web.assets_backend': [

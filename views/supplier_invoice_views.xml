@@ -1,9 +1,23 @@
 <odoo>
+    <!-- Supplier Invoice Form -->
     <record id="view_supplier_invoice_form" model="ir.ui.view">
         <field name="name">supplier_invoice.form</field>
         <field name="model">vighnahar_agro.supplier_invoice</field>
         <field name="arch" type="xml">
             <form string="Supplier Invoice">
+                <header>
+                    <!-- Buttons -->
+                    <button name="action_confirm" type="object" string="Confirm" class="oe_highlight"
+                        invisible="state != 'draft'" />
+                    <button name="action_register_payment" type="object" string="Register Payment" class="oe_highlight"
+                        invisible="payment_status == 'fully_paid' or state != 'post'" />
+                    <button name="action_cancel" type="object" string="Cancel" invisible="state != 'post'" />
+                    
+                    <!-- Add Status Bar for Invoice Status -->
+                    <field name="state" widget="statusbar" statusbar_visible="draft,post,canceled"/>
+                    <!-- <field name="payment_status" widget="statusbar" statusbar_visible="pending,fully_paid,partially_paid"/> -->
+                </header>
+
                 <sheet>
                     <group>
                         <group>
@@ -13,10 +27,36 @@
                         </group>
                         <group>
                             <field name="date"/>
-                            <field name="invoice_type"/>
                             <field name="total_amount" readonly="1"/>
+                            <field name="payment_status" invisible="1"/>
                         </group>
                     </group>
+
+                    <!-- Badge for Payment Status in top-right corner -->
+                    <!-- <div class="oe_button_box" style="position: absolute; top: 10px; right: 10px;">
+                        <span t-attf-class="badge badge-#{'success' if record.payment_status == 'fully_paid' else 'danger'}">
+                            <field name="payment_status"></field>
+                        </span>
+                    </div> -->
+
+                    <!-- Badges to show payment status -->
+                    <div class="o_form_invisible_fields">
+                        <!-- Fully Paid Badge -->
+                        <span class="badge badge-success" invisible="payment_status != 'fully_paid'">
+                            Fully Paid
+                        </span>
+
+                        <!-- Partially Paid Badge -->
+                        <span class="badge badge-warning" invisible="payment_status != 'partially_paid'">
+                            Partially Paid
+                        </span>
+
+                        <!-- Pending Badge -->
+                        <span class="badge badge-danger" invisible="payment_status != 'pending'">
+                            Pending
+                        </span>
+                    </div>
+
                     <notebook>
                         <page string="Invoice Lines">
                             <field name="supplier_invoice_line_ids">
@@ -25,35 +65,44 @@
                                     <field name="product_id" string="Product"/>
                                     <field name="quantity" string="Quantity"/>
                                     <field name="uom_id" string="UOM"/>
-                                    <field name="converted_quantity" string="Converted Quantity " optional = "hide"/>
-                                    <field name="converted_uom_id" string="Converted UOM" optional = "hide"/>
+                                    <field name="converted_quantity" string="Converted Quantity" optional="hide"/>
+                                    <field name="converted_uom_id" string="Converted UOM" optional="hide"/>
                                     <field name="price" string="Unit Price"/>
                                     <field name="total" string="Total Price" readonly="1"/>
                                     <field name="uom_category_id" string="UOM Category" optional="hide"/>
-                                    <field name="available_product_category_ids" optional = "hide"/>
+                                    <field name="available_product_category_ids" optional="hide"/>
                                 </tree>
                             </field>
                         </page>
                     </notebook>
+
+                    <div style="text-align: right; padding-top: 20px;">
+                        <div>Total: <strong><field name="total_amount"/></strong></div>
+                        <div>Amount Due: <strong><field name="amount_due"/></strong></div>
+                        <div>Paid Amount: <strong><field name="paid_amount"/></strong></div>
+                    </div>
                 </sheet>
             </form>
         </field>
     </record>
 
+    <!-- Supplier Invoice Tree -->
     <record id="view_supplier_invoice_tree" model="ir.ui.view">
         <field name="name">supplier_invoice.tree</field>
         <field name="model">vighnahar_agro.supplier_invoice</field>
         <field name="arch" type="xml">
             <tree string="Supplier Invoices">
                 <field name="name" string="Name"/>
-                <field name="party_id" string="Party"/>
+                <field name="party_id" string="Party/Supplier"/>
                 <field name="date" string="Date"/>
-                <field name="invoice_type" string="Invoice Type"/>
                 <field name="total_amount" string="Total Amount"/>
+                <field name="state"/>
+                <field name="payment_status" string="Payment Status" widget="badge" decoration-success="payment_status == 'fully_paid'"/>
             </tree>
         </field>
     </record>
 
+    <!-- Action for Supplier Invoice -->
     <record id="action_supplier_invoice" model="ir.actions.act_window">
         <field name="name">Supplier Invoices</field>
         <field name="res_model">vighnahar_agro.supplier_invoice</field>
@@ -61,4 +110,57 @@
     </record>
 
     <menuitem id="menu_supplier_invoice" name="Supplier Invoices" parent="menu_supplier" action="action_supplier_invoice"/>
+
+    <!-- Supplier Payment Tree View -->
+    <record id="view_supplier_payment_tree" model="ir.ui.view">
+        <field name="name">supplier.payment.tree</field>
+        <field name="model">vighnahar_agro.supplier_payment</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="name"/>
+                <field name="payment_date"/>
+                <field name="amount"/>
+                <field name="payment_method"/>
+                <field name="invoice_id"/>
+                <field name="state"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Supplier Payment Form View -->
+    <record id="view_supplier_payment_form" model="ir.ui.view">
+        <field name="name">supplier.payment.form</field>
+        <field name="model">vighnahar_agro.supplier_payment</field>
+        <field name="arch" type="xml">
+            <form string="Supplier Payment">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="payment_date"/>
+                            <field name="amount"/>
+                        </group>
+                        <group>
+                            <field name="payment_method"/>
+                            <field name="invoice_id" string="Memo" readonly="1"/>
+                            <field name="state"/>
+                        </group> 
+                    </group>
+                </sheet>
+                <footer>
+                    <button name="action_pay" string="Create Payment" type="object" class="btn-primary"/>
+                    <button string="Cancel" class="btn-default" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action for Supplier Payments -->
+    <record id="action_supplier_payment" model="ir.actions.act_window">
+        <field name="name">Supplier Payments</field>
+        <field name="res_model">vighnahar_agro.supplier_payment</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <menuitem id="menu_supplier_payment" name="Supplier Payments" parent="menu_supplier" action="action_supplier_payment"/>
 </odoo>
