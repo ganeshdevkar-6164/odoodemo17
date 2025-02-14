@@ -1,77 +1,83 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
     <template id="report_customer_invoice_template">
-        <t t-call="web.external_layout_standard">
-            <div style="width: 100%; margin: 0 auto; font-family: Arial, sans-serif; font-size: 12px;">
-                <!-- Header -->
-                <table style="width: 100%; margin-bottom: 20px;">
-                    <tr>
-                        <td style="width: 15%;"><img t-att-src="'/web/image/vighnahar_agro.customer_invoice/' + doc.id + '/logo'" style="max-width: 100%; height: auto;" alt="Logo"/></td>
-                        <td style="text-align: center; font-weight: bold; font-size: 18px;">VIGHNAHAR AGRO</td>
-                    </tr>
-                </table>
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <!-- Page container -->
+                <div class="page">
 
-                <!-- Contact Information -->
-                <table style="width: 100%; margin-bottom: 20px;">
-                    <tr>
-                        <td style="width: 50%; text-align: right;">Shree Vighnahar Prasanna</td>
-                        <td style="text-align: right;">Shree Vaibhav K. Kavde</td>
-                    </tr>
-                    <tr>
-                        <td style="width: 50%; text-align: right;">Mobile: 9766512238, 8767200000</td>
-                        <td style="text-align: right;">At Port: Ozar, Tal - Junnar, Dist - Pune</td>
-                    </tr>
-                </table>
+                    <!-- Header Section (Logo + Vighnahar Agro) -->
+                    <div class="header" style="display: flex; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px;">
+                        <!-- Logo -->
+                        <div class="logo" style="flex-shrink: 0; margin-right: 20px;">
+                            <img src="/vighnahar_agro/static/src/img/logo.png" alt="Logo" style="max-width: 150px; max-height: 200px;"/>
+                        </div>
 
-                <!-- Invoice Details -->
-                <table style="width: 100%; margin-bottom: 20px;">
-                    <tr>
-                        <td style="width: 50%;"><strong>Party Name:</strong> <span t-field="doc.party_id.name" /></td>
-                        <td style="width: 25%; text-align: right;"><strong>Invoice No:</strong> <span t-field="doc.name" /></td>
-                        <td style="width: 25%; text-align: right;"><strong>Date:</strong> <span t-field="doc.date" /></td>
-                    </tr>
-                </table>
+                        <!-- Company Name (Vighnahar Agro) -->
+                        <div class="company-name" style="text-align: left; flex-grow: 1;">
+                            <h1 style="margin: 0; text-transform: uppercase; font-size: 24px;">Vighnahar Agro</h1>
+                        </div>
+                    </div>
 
-                <!-- Invoice Line Table -->
-                <table style="width: 100%; margin-top: 20px; border: 1px solid #ddd; border-collapse: collapse;">
-                    <thead>
-                        <tr>
-                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Product</th>
-                            <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Quantity</th>
-                            <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">UOM</th>
-                            <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Price</th>
-                            <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr t-foreach="doc.customer_invoice_line_ids" t-as="line">
-                            <td style="border: 1px solid #ddd; padding: 8px;" t-field="line.product_id.name" />
-                            <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" t-field="line.quantity" />
-                            <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" t-field="line.uom_id.name" />
-                            <td style="border: 1px solid #ddd; padding: 8px; text-align: right;" t-field="line.price" />
-                            <td style="border: 1px solid #ddd; padding: 8px; text-align: right;" t-field="line.total" />
-                        </tr>
-                    </tbody>
-                </table>
+                    <!-- Company Details (Right-aligned) -->
+                    <div class="company-details" style="text-align: right; margin-bottom: 20px;">
+                        <h3 style="margin: 0;">Shree Vighnahar Prasanna</h3>
+                        <h3 style="margin: 0;">Shree Vaibhav V. Kavde</h3>
+                        <p style="margin: 0;">Mobile: 9766512238, 8767200000</p>
+                        <p style="margin: 0;">At Port: Ozar, Tal - Junnar, Dist - Pune</p>
+                    </div>
 
-                <!-- Total Amount -->
-                <table style="width: 100%; margin-top: 20px;">
-                    <tr>
-                        <td style="width: 70%; text-align: right; font-weight: bold;">Total Amount:</td>
-                        <td style="width: 30%; text-align: right; font-weight: bold;" t-field="doc.total_amount" />
-                    </tr>
-                </table>
+                    <!-- Invoice Details (Left-aligned, on same row) -->
+                    <div class="invoice-details" style="margin-bottom: 20px; display: flex; justify-content: space-between;">
+                        <div class="party-name">
+                            <p style="margin: 0;">Party Name: <strong><t t-esc="o.party_id.name"/></strong></p> <!-- Dynamically get Party Name -->
+                        </div>
+                        <div class="invoice-info" style="text-align: right;">
+                            <p style="margin: 0;">Invoice No: <strong><t t-esc="o.name"/></strong></p> <!-- Dynamically get Invoice Number -->
+                            <p style="margin: 0;">Date: <strong><t t-esc="o.date"/></strong></p> <!-- Dynamically get Date -->
+                        </div>
+                    </div>
 
-                <!-- Footer -->
-                <table style="width: 100%; margin-top: 30px;">
-                    <tr>
-                        <td style="text-align: center;">Thank You</td>
-                    </tr>
-                    <tr>
-                        <td style="text-align: center; padding-top: 10px;">Signature</td>
-                    </tr>
-                </table>
-            </div>
+                    <!-- Products Table -->
+                    <div class="products" style="margin-bottom: 20px; border-top: 1px solid #000; border-bottom: 1px solid #000; padding-top: 10px; padding-bottom: 10px;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr>
+                                    <th style="border-bottom: 1px solid #000; padding-bottom: 5px; text-align: left;">Product</th>
+                                    <th style="border-bottom: 1px solid #000; padding-bottom: 5px; text-align: left;">Quantity</th>
+                                    <th style="border-bottom: 1px solid #000; padding-bottom: 5px; text-align: left;">UOM</th>
+                                    <th style="border-bottom: 1px solid #000; padding-bottom: 5px; text-align: left;">Price</th>
+                                    <th style="border-bottom: 1px solid #000; padding-bottom: 5px; text-align: left;">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Loop through the invoice lines and display product details -->
+                                <t t-foreach="o.customer_invoice_line_ids" t-as="line">
+                                    <tr>
+                                        <td><t t-esc="line.product_id.name"/></td> <!-- Dynamically get Product Name -->
+                                        <td><t t-esc="line.quantity"/></td> <!-- Dynamically get Quantity -->
+                                        <td><t t-esc="line.uom_id.name"/></td> <!-- Dynamically get UOM -->
+                                        <td><t t-esc="line.price"/></td> <!-- Dynamically get Price -->
+                                        <td><t t-esc="line.total"/></td> <!-- Dynamically get Total -->
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Total Amount -->
+                    <div class="total-amount" style="text-align: right; margin-bottom: 20px;">
+                        <p style="margin: 0; font-size: 16px; font-weight: bold;">Total Amount: <t t-esc="o.total_amount"/></p> <!-- Dynamically get Total Amount -->
+                    </div>
+
+                    <!-- Footer Section -->
+                    <div class="footer" style="text-align: center; margin-top: 20px;">
+                        <p style="margin: 0;">Thank You</p>
+                        <p style="margin: 0;">Signature</p>
+                    </div>
+
+                </div>
+            </t>
         </t>
     </template>
 
