@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <template id="report_customer_invoice_template">
+        <t t-call="web.external_layout_standard">
+            <div style="width: 100%; margin: 0 auto; font-family: Arial, sans-serif; font-size: 12px;">
+                <!-- Header -->
+                <table style="width: 100%; margin-bottom: 20px;">
+                    <tr>
+                        <td style="width: 15%;"><img t-att-src="'/web/image/vighnahar_agro.customer_invoice/' + doc.id + '/logo'" style="max-width: 100%; height: auto;" alt="Logo"/></td>
+                        <td style="text-align: center; font-weight: bold; font-size: 18px;">VIGHNAHAR AGRO</td>
+                    </tr>
+                </table>
+
+                <!-- Contact Information -->
+                <table style="width: 100%; margin-bottom: 20px;">
+                    <tr>
+                        <td style="width: 50%; text-align: right;">Shree Vighnahar Prasanna</td>
+                        <td style="text-align: right;">Shree Vaibhav K. Kavde</td>
+                    </tr>
+                    <tr>
+                        <td style="width: 50%; text-align: right;">Mobile: 9766512238, 8767200000</td>
+                        <td style="text-align: right;">At Port: Ozar, Tal - Junnar, Dist - Pune</td>
+                    </tr>
+                </table>
+
+                <!-- Invoice Details -->
+                <table style="width: 100%; margin-bottom: 20px;">
+                    <tr>
+                        <td style="width: 50%;"><strong>Party Name:</strong> <span t-field="doc.party_id.name" /></td>
+                        <td style="width: 25%; text-align: right;"><strong>Invoice No:</strong> <span t-field="doc.name" /></td>
+                        <td style="width: 25%; text-align: right;"><strong>Date:</strong> <span t-field="doc.date" /></td>
+                    </tr>
+                </table>
+
+                <!-- Invoice Line Table -->
+                <table style="width: 100%; margin-top: 20px; border: 1px solid #ddd; border-collapse: collapse;">
+                    <thead>
+                        <tr>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Product</th>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Quantity</th>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">UOM</th>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Price</th>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr t-foreach="doc.customer_invoice_line_ids" t-as="line">
+                            <td style="border: 1px solid #ddd; padding: 8px;" t-field="line.product_id.name" />
+                            <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" t-field="line.quantity" />
+                            <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" t-field="line.uom_id.name" />
+                            <td style="border: 1px solid #ddd; padding: 8px; text-align: right;" t-field="line.price" />
+                            <td style="border: 1px solid #ddd; padding: 8px; text-align: right;" t-field="line.total" />
+                        </tr>
+                    </tbody>
+                </table>
+
+                <!-- Total Amount -->
+                <table style="width: 100%; margin-top: 20px;">
+                    <tr>
+                        <td style="width: 70%; text-align: right; font-weight: bold;">Total Amount:</td>
+                        <td style="width: 30%; text-align: right; font-weight: bold;" t-field="doc.total_amount" />
+                    </tr>
+                </table>
+
+                <!-- Footer -->
+                <table style="width: 100%; margin-top: 30px;">
+                    <tr>
+                        <td style="text-align: center;">Thank You</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center; padding-top: 10px;">Signature</td>
+                    </tr>
+                </table>
+            </div>
+        </t>
+    </template>
+
+</odoo>

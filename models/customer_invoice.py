@@ -5,81 +5,111 @@ from odoo.exceptions import UserError, ValidationError
 class CustomerInvoice(models.Model):
     _name = 'vighnahar_agro.customer_invoice'
     _description = 'Customer Invoice'
-    
+
     name = fields.Char(string="Reference", default='New')
-    description = fields.Text(string="Description")
+    
     party_id = fields.Many2one('vighnahar_agro.party', string="Party", required=True, domain=[('is_customer', '=', True)])
     date = fields.Date(string="Date", default=fields.Date.today)
-    invoice_type = fields.Selection([('standard', 'Standard'), ('credit', 'Credit Memo'), ('debit', 'Debit Memo'), ('prepayment', 'Pre Payment')], string='Invoice Type', default='standard')
+    payment_terms_id = fields.Many2one('vighnahar_agro.payment_terms', string='Payment Terms')
+    invoice_type = fields.Selection([('regular', 'Regular Invoice'), ('percentage', 'Downpayment(Percentage)'), ('fixed_amount', 'Downpayment(Fixed Amount)')], string='Invoice Type', default='regular')
     total_amount = fields.Float(string='Total Amount', compute='_compute_total_amount', store=True)
-    state = fields.Selection([('draft', 'Draft'),
-                              ('sales_order', 'Sales Order'),
-                              ('cancel', 'Cancel'),
-                              ('to_invoice','To Invoice')], string='Status', default='draft', required=True)
-    
-    # Customer Invoice Line
+    state = fields.Selection([('draft', 'Draft'), ('invoice', 'Invoice'), ('cancel', 'Cancel'), ('payment', 'In Payment'),('downpayment','Downpayment'),('paid','Paid')], string='Status', default='draft', required=True)
+    payment_id = fields.Many2one('vighnahar_agro.payment', string='Payment')
+
     customer_invoice_line_ids = fields.One2many('vighnahar_agro.customer_invoice_line', 'customer_invoice_id', string='Invoice Lines')
+
     
-    # generate unique sequence number
+    downpayment = fields.Float(string='Downpayment Amount', default=0.0)
+    remaining_amount = fields.Float(string='Remaining Amount', compute='_compute_remaining_amount', store=True)
+    
+    @api.depends('total_amount', 'downpayment')
+    def _compute_remaining_amount(self):
+        for record in self:
+            record.remaining_amount = record.total_amount - record.downpayment
+    
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
             if not vals.get('name') or vals['name'] == 'New':
                 vals['name'] = self.env['ir.sequence'].next_by_code('vighnahar_agro.customer_invoice')
-                  
         return super().create(vals_list)
-    
-    # calculate the total amount
+
     @api.depends('customer_invoice_line_ids.total')
     def _compute_total_amount(self):
         for record in self:
             record.total_amount = sum(line.total for line in record.customer_invoice_line_ids)
-    
-    def action_confirm(self):
+
+    def action_create(self):
         for rec in self:
-            rec.state = 'sales_order'
-            
+            if rec.invoice_type == 'regular':
+                rec.state = 'invoice'
+            elif rec.invoice_type == 'percentage':
+                # Open the Downpayment Wizard with the percentage field visible
+                return {
+                    'type': 'ir.actions.act_window',
+                    'name': 'Downpayment Percentage',
+                    'view_mode': 'form',
+                    'res_model': 'vighnahar_agro.downpayment_wizard',
+                    'target': 'new',
+                    'context': {
+                        'default_customer_invoice_id': rec.id,
+                        'default_invoice_type': rec.invoice_type,  # Add context to specify the invoice type
+                    }
+                }
+            elif rec.invoice_type == 'fixed_amount':
+                # Open the Downpayment Wizard with the fixed amount field visible
+                return {
+                    'type': 'ir.actions.act_window',
+                    'name': 'Downpayment Fixed Amount',
+                    'view_mode': 'form',
+                    'res_model': 'vighnahar_agro.downpayment_wizard',
+                    'target': 'new',
+                    'context': {
+                        'default_customer_invoice_id': rec.id,
+                        'default_invoice_type': rec.invoice_type,  # Add context to specify the invoice type
+                    }
+                }
+            else:
+                rec.state = 'draft'
+
+
+    def action_payment(self):
+        for rec in self:
+            payment_vals = {
+                'customer_invoice_id': rec.id,
+                'date': fields.Date.today(),
+                'amount': rec.remaining_amount,
+                'party_id': rec.party_id.id,
+                'invoice_type': rec.invoice_type,
+                'payment_line_ids': [(0, 0, {
+                    'product_id': line.product_id.id,
+                    'quantity': line.quantity,
+                    'uom_id': line.uom_id.id,
+                    'price': line.price,
+                    'converted_quantity': line.converted_quantity,
+                    'converted_uom_id': line.converted_uom_id.id,
+                    'uom_category_id': line.uom_category_id.id,
+                    'available_product_category_ids': [(6, 0, line.available_product_category_ids.ids)],
+                }) for line in rec.customer_invoice_line_ids]
+            }
+            payment = self.env['vighnahar_agro.payment'].create(payment_vals)
+            rec.payment_id = payment.id
+            rec.state = 'payment'
+            return {
+                'type': 'ir.actions.act_window',
+                'name': 'Payment',
+                'view_mode': 'form',
+                'res_model': 'vighnahar_agro.payment',
+                'res_id': payment.id,
+                'target': 'current',
+            }
+
     def action_cancel(self):
         for rec in self:
             rec.state = 'cancel'
-            
-    def action_invoice(self):
-        for rec in self:
-            if rec.invoice_type == 'standard':
-                standard_invoice_vals = {
-                    'name': self.env['ir.sequence'].next_by_code('vighnahar_agro.standard_invoice'),
-                    'customer_invoice_id': rec.id,
-                    'description': rec.description,
-                    'party_id': rec.party_id.id,
-                    'date': rec.date,
-                    'total_amount': rec.total_amount,
-                    'standard_invoice_line_ids': [(0, 0, {
-                        'product_category_id': line.product_category_id.id,
-                        'product_id': line.product_id.id,
-                        'quantity': line.quantity,
-                        'uom_id': line.uom_id.id,
-                        'price': line.price,
-                        'total': line.total,
-                        'uom_category_id': line.uom_category_id.id,
-                        'converted_quantity': line.converted_quantity,
-                        'converted_uom_id': line.converted_uom_id.id,
-                        'available_product_category_ids': [(6, 0, line.available_product_category_ids.ids)],
-                    }) for line in rec.customer_invoice_line_ids]
-                }
-                standard_invoice = self.env['vighnahar_agro.standard_invoice'].create(standard_invoice_vals)
-                rec.state = 'to_invoice'
-                
-                return {
-                    'type': 'ir.actions.act_window',
-                    'name': 'Standard Invoice',
-                    'res_model': 'vighnahar_agro.standard_invoice',
-                    'view_mode': 'form',
-                    'res_id': standard_invoice.id,
-                    'target': 'current',
-                }
-                
-            else:
-                raise UserError(_('This feature is not yet implemented for Credit Memo, Debit Memo, or Pre Payment invoice types.'))
+    
+   
+    
 
 
 class CustomerInvoiceLine(models.Model):
@@ -126,50 +156,145 @@ class CustomerInvoiceLine(models.Model):
             line.available_product_category_ids = category_ids
 
 
-class StandardInvoice(models.Model):
-    _name = 'vighnahar_agro.standard_invoice'
-    _description = 'Standard Invoice'
 
-    name = fields.Char(string="Reference", required=True)
-    customer_invoice_id = fields.Many2one('vighnahar_agro.customer_invoice', string='Customer Invoice')
-    description = fields.Text(string="Description")
-    party_id = fields.Many2one('vighnahar_agro.party', string="Party", required=True)
+
+
+
+
+
+class Payment(models.Model):
+    _name = 'vighnahar_agro.payment'
+    _description = 'Payment'
+
+    name = fields.Char(string="Reference", default='New')
+    customer_invoice_id = fields.Many2one('vighnahar_agro.customer_invoice', string='Customer Invoice', required=True)
+    party_id = fields.Many2one('vighnahar_agro.party', string="Party", required=True, domain=[('is_customer', '=', True)])
     date = fields.Date(string="Date", default=fields.Date.today)
-    total_amount = fields.Float(string='Total Amount', compute='_compute_total_amount', store=True)
-    standard_invoice_line_ids = fields.One2many('vighnahar_agro.standard_invoice_line', 'standard_invoice_id', string='Invoice Lines')
+    invoice_type = fields.Selection([('regular', 'Regular Invoice'), ('percentage', 'Downpayment(Percentage)'), ('fixed_amount', 'Downpayment(Fixed Amount)')], string='Invoice Type', default='regular')
+    amount = fields.Float(string='Amount', compute='_compute_amount', store=True)
+    payment_terms_id = fields.Many2one('vighnahar_agro.payment_terms', string='Payment Terms')
+    state = fields.Selection([('draft', 'Draft'), ('paid', 'Paid')], string='Status', default='draft', required=True)
+    payment_line_ids = fields.One2many('vighnahar_agro.payment_line', 'payment_id', string='Payment Lines')
 
-    @api.depends('standard_invoice_line_ids.total')
-    def _compute_total_amount(self):
-        for record in self:
-            record.total_amount = sum(line.total for line in record.standard_invoice_line_ids)
-
-    @api.model
-    def create(self, vals):
-        if not vals.get('name') or vals['name'] == 'New':
-            vals['name'] = self.env['ir.sequence'].next_by_code('vighnahar_agro.standard_invoice')
-        return super().create(vals)
-
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            if not vals.get('name') or vals['name'] == 'New':
+                vals['name'] = self.env['ir.sequence'].next_by_code('vighnahar_agro.payment')
+        return super().create(vals_list)
     
 
-    
 
-class StandardInvoiceLine(models.Model):
-    _name = 'vighnahar_agro.standard_invoice_line'
-    _description = 'Standard Invoice Line'
+    def action_confirm_payment(self):
+        for rec in self:
+            # If it's a downpayment, assign the amount to the downpayment field of the invoice
+            if rec.customer_invoice_id.state == 'downpayment':
+                rec.customer_invoice_id.downpayment += rec.amount  # Adding the downpayment to the invoice's downpayment field
+                rec.customer_invoice_id.state = 'downpayment'
+            else:
+                # If it's a regular payment, mark the invoice as paid
+                rec.customer_invoice_id.state = 'paid'
 
-    standard_invoice_id = fields.Many2one('vighnahar_agro.standard_invoice', string='Invoice')
-    product_category_id = fields.Many2one('vighnahar_agro.product_category', string='Product Category')
+            rec.state = 'paid'  # Change the payment status to 'paid'
+            
+
+
+
+class PaymentLine(models.Model):
+    _name = 'vighnahar_agro.payment_line'
+    _description = 'Payment Line'
+
+    payment_id = fields.Many2one('vighnahar_agro.payment', string='Payment')
     product_id = fields.Many2one('vighnahar_agro.product', string='Product')
     quantity = fields.Float(string='Quantity', digits=(16, 4))
     uom_id = fields.Many2one('vighnahar_agro.uom', string='UOM')
     price = fields.Float(string='Unit Price')
     total = fields.Float(string='Total Price', compute='_compute_total', store=True)
-    uom_category_id = fields.Many2one('vighnahar_agro.uom_category', string='UOM Category')
-    converted_quantity = fields.Float(string='Converted Quantity', digits=(16, 4))
+    converted_quantity = fields.Float(string='Converted Quantity', digits=(16, 4), store=True)
     converted_uom_id = fields.Many2one('vighnahar_agro.uom', string='Converted UOM')
-    available_product_category_ids = fields.Many2many('vighnahar_agro.product_category', string='Available Product Categories', relation='vighnahar_agro_prod_cat_std_invoice_line_rel')
+    uom_category_id = fields.Many2one('vighnahar_agro.uom_category', string='UOM Category')
+    available_product_category_ids = fields.Many2many('vighnahar_agro.product_category', string='Available Product Categories')
 
     @api.depends('quantity', 'price')
     def _compute_total(self):
         for line in self:
             line.total = line.quantity * line.price
+            
+    
+            
+
+
+
+class DownpaymentWizard(models.TransientModel):
+    _name = 'vighnahar_agro.downpayment_wizard'
+    _description = 'Downpayment Wizard'
+
+    customer_invoice_id = fields.Many2one('vighnahar_agro.customer_invoice', string='Customer Invoice', required=True)
+    invoice_type = fields.Selection(related='customer_invoice_id.invoice_type', string='Invoice Type', readonly=True)
+    percentage = fields.Float(string='Downpayment Percentage')
+    fixed_amount = fields.Float(string='Downpayment Fixed Amount')
+
+    @api.onchange('invoice_type')
+    def _onchange_invoice_type(self):
+        if self.invoice_type == 'percentage':
+            # Show only percentage field and hide the fixed_amount field
+            self.fixed_amount = False  # Reset fixed amount when invoice type is percentage
+        elif self.invoice_type == 'fixed_amount':
+            # Show only fixed_amount field and hide the percentage field
+            self.percentage = 0.0  # Reset percentage when invoice type is fixed_amount
+            
+    def action_create_payment(self):
+        """
+        This method is called to create the payment based on the downpayment amount.
+        If the invoice type is percentage, calculate the percentage of the total amount
+        and create the payment with the corresponding details.
+        """
+        if self.invoice_type == 'percentage':
+            downpayment_amount = self.customer_invoice_id.total_amount * (self.percentage / 100)
+        elif self.invoice_type == 'fixed_amount':
+            downpayment_amount = self.fixed_amount
+        else:
+            raise ValidationError(_("Invalid invoice type for downpayment."))
+
+        # Check if the 'downpayment' product exists, if not, create it
+        downpayment_product = self.env['vighnahar_agro.product'].search([('name', '=', 'Downpayment')], limit=1)
+        if not downpayment_product:
+            downpayment_product = self.env['vighnahar_agro.product'].create({
+                'name': 'Downpayment',
+                'type': 'service',  # assuming it's a service product
+            })
+
+        # Create a payment line for the downpayment product
+        payment_line_vals = {
+            'product_id': downpayment_product.id,
+            'quantity': 1,
+            'uom_id': downpayment_product.uom_id.id,  # Assuming default UOM is set for product
+            'price': downpayment_amount,
+            'total': downpayment_amount,
+        }
+
+        # Create the payment record
+        payment_vals = {
+            'customer_invoice_id': self.customer_invoice_id.id,
+            'date': fields.Date.today(),
+            'amount': downpayment_amount,
+            'party_id': self.customer_invoice_id.party_id.id,
+            'invoice_type': self.invoice_type,
+            'payment_line_ids': [(0, 0, payment_line_vals)],
+        }
+
+        payment = self.env['vighnahar_agro.payment'].create(payment_vals)
+
+        # Link the payment to the invoice
+        self.customer_invoice_id.payment_id = payment.id
+        self.customer_invoice_id.state = 'downpayment'
+
+        # Return an action to open the payment form
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Payment',
+            'view_mode': 'form',
+            'res_model': 'vighnahar_agro.payment',
+            'res_id': payment.id,
+            'target': 'current',
+        }

@@ -13,7 +13,7 @@
         'views/customer_invoice_views.xml',
         'views/uom_views.xml',
         'views/party_views.xml',
-        'report/standard_invoice_templates.xml',
+        'report/customer_invoice_templates.xml',
         'report/report.xml',
         
         
@@ -22,6 +22,7 @@
     'assets': {
         'web.assets_backend': [
             'vighnahar_agro/static/src/css/custom_styles.css',
+            'vighnahar_agro/static/src/img/logo.png"',
             'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css',
             'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css',
         ],

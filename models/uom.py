@@ -28,6 +28,10 @@ class ProductCategory(models.Model):
     name = fields.Char(string='Category Name', required=True)
     define_date = fields.Datetime(string="Define Date", default=fields.Datetime.now)
     
+
+
+
+    
     
 #Attributes   
 class Attributes(models.Model):
@@ -47,3 +51,12 @@ class AttributesLine(models.Model):
     attributes_id = fields.Many2one('vighnahar_agro.attributes', string='Attributes')
     is_custom = fields.Boolean(string='Is Custom Value')
     default_extra_price = fields.Float(string='Default Extra Price')
+    
+
+
+class PaymentTerms(models.Model):
+    _name = 'vighnahar_agro.payment_terms'
+    _description = 'Payment Terms'  
+    
+    name = fields.Char(string='Payment Terms', required=True)
+    define_date = fields.Datetime(string="Define Date", default=fields.Datetime.now)
