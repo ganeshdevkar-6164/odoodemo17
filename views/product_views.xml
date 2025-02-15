@@ -1,11 +1,25 @@
 <odoo>
     <data>
+
         <record id="view_product_form" model="ir.ui.view">
             <field name="name">product.form</field>
             <field name="model">vighnahar_agro.product</field>
             <field name="arch" type="xml">
                 <form string="Product">
                     <sheet>
+                        <div name="button_box" position="inside">
+                            <div class="oe_stat_button btn-blue">
+                                <i class="fa fa-cubes" style="margin-right: 8px;"></i> <!-- Added margin to create space -->
+                                <div class="o_field_widget o_stat_info">
+                                    <span class="o_stat_value d-flex gap-1">
+                                        <field name="quantity" nolabel="1" class="oe_inline"/>
+                                        <field name="unit_of_measure_id" class="oe_inline" readonly="1"/>
+                                    </span>
+                                    <span class="o_stat_text">On Hand</span>
+                                </div>
+                            </div>
+                        </div>
+
                         <group>
                             <group>
                                 <field name="name"/>
@@ -202,7 +216,10 @@
                                             <i class="fas me-2 fa-calendar-alt" title="Define Date"/>
                                             <field name="define_date"/>
                                         </li>
-                                        
+                                        <li t-if="record.quantity.raw_value" class="o_force_ltr">
+                                            <i class="me-2 fa-cubes" title="On Hand Quantity"/>
+                                            <field name="quantity"/> kg
+                                        </li>
                                     
                                     </ul>
                                 </div>
@@ -221,10 +238,12 @@
                 <tree string="Products">
                     <field name="name"/>
                     <field name="description"/>
+                    <field name="product_category_id"/>
                     <field name="define_date"/>
                     <field name="sales_price"/>
                     <field name="cost_price"/>
-                    <field name="product_category_id"/>
+                    <field name = "quantity"/>
+                    <field name="unit_of_measure_id"/>
                 </tree>
             </field>
         </record>

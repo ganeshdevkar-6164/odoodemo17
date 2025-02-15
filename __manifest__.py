@@ -16,6 +16,7 @@
         'views/inventory_stock_location_views.xml', 
         'report/customer_invoice_templates.xml',
         'report/report.xml',
+        #'data/ir_cron.xml',
     ],
     'assets': {
         'web.assets_backend': [

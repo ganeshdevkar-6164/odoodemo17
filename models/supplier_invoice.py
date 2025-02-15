@@ -9,12 +9,12 @@ class SupplierInvoice(models.Model):
     party_id = fields.Many2one('vighnahar_agro.party', string="Party/Supplier", required=True, domain=[('is_supplier', '=', True)])
     date = fields.Date(string="Date", default=fields.Date.today)
     total_amount = fields.Float(string='Total Amount', compute='_compute_total_amount', store=True)
-    
+    warehouse_id = fields.Many2one('vighnahar_agro.warehouse', string = "Warehouse", required=True)
     amount_due = fields.Float(string="Amount Due", compute='_compute_amount_due', store=True)
     paid_amount = fields.Float(string="Paid Amount", compute='_compute_total_paid', store=True)
     
-    supplier_invoice_line_ids = fields.One2many('vighnahar_agro.supplier_invoice_line', 'invoice_id', string='Invoice Lines')
-    payment_ids = fields.One2many('vighnahar_agro.supplier_payment', 'invoice_id', string='Payments')
+    supplier_invoice_line_ids = fields.One2many('vighnahar_agro.supplier_invoice_line', 'invoice_id', string='Invoice Lines', ondelete='cascade')
+    payment_ids = fields.One2many('vighnahar_agro.supplier_payment', 'invoice_id', string='Payments', ondelete='cascade')
     
     state = fields.Selection([
         ('draft', 'Draft'),
@@ -103,8 +103,44 @@ class SupplierInvoice(models.Model):
         else:
             raise ValueError("Cannot mark as paid, total amount does not match paid amount.")
 
-    # Action to confirm the invoice
+    # Action to confirm the invoice(nachiket Update)
     def action_confirm(self):
+        # Step 1: Check if the warehouse exists in PhysicalInventory, if not create it
+        physical_inventory = self.env['vighnahar_agro.physical_inventory'].search([('warehouse_id', '=', self.warehouse_id.id)], limit=1)
+
+        if not physical_inventory:
+            # If the warehouse doesn't exist in PhysicalInventory, create a new record
+            physical_inventory = self.env['vighnahar_agro.physical_inventory'].create({
+                'warehouse_id': self.warehouse_id.id,
+            })
+        
+        # Step 2: Update or create InventoryLine records for each invoice line
+        for line in self.supplier_invoice_line_ids:
+            # Get or create the corresponding InventoryLine record
+            inventory_line = self.env['vighnahar_agro.inventory_line'].search([
+                ('physical_inventory_id', '=', physical_inventory.id),
+                ('product_category_id', '=', line.product_category_id.id),
+                ('product_id', '=', line.product_id.id),
+                
+            ], limit=1)
+
+            if inventory_line:
+                # If the record exists, add the new quantity to the existing quantity
+                inventory_line.write({
+                    'quantity': inventory_line.quantity + line.converted_quantity,  # Add the converted quantity
+                    'uom_id': line.converted_uom_id.id,  # Update UOM if necessary
+                })
+            else:
+                # If the record doesn't exist, create a new InventoryLine
+                self.env['vighnahar_agro.inventory_line'].create({
+                    'physical_inventory_id': physical_inventory.id,
+                    'product_category_id': line.product_category_id.id,
+                    'product_id': line.product_id.id,
+                    'quantity': line.converted_quantity,
+                    'uom_id': line.converted_uom_id.id,
+                })
+
+        # Step 3: Set the state of the invoice to 'post'
         self.state = 'post'
         
     # Action to cancel the invoice
@@ -116,7 +152,7 @@ class SupplierInvoiceLine(models.Model):
     _name = 'vighnahar_agro.supplier_invoice_line'
     _description = 'Supplier Invoice Line'
 
-    invoice_id = fields.Many2one('vighnahar_agro.supplier_invoice', string='Invoice')
+    invoice_id = fields.Many2one('vighnahar_agro.supplier_invoice', string='Invoice', ondelete='cascade')
     uom_category_id = fields.Many2one('vighnahar_agro.uom_category', related='product_id.category_id', string='UOM Category')
     product_category_id = fields.Many2one('vighnahar_agro.product_category', string='Product Category', domain="[('id', 'in', available_product_category_ids)]")
     product_id = fields.Many2one('vighnahar_agro.product', string='Product', domain="[('product_category_id', '=', product_category_id)]")

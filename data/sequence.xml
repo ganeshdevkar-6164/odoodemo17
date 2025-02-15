@@ -18,7 +18,7 @@
         </record>
         
 
-        <record id = "seq_payment" model = "ir.sequence">
+        <record id = "seq_customer_payment" model = "ir.sequence">
             <field name="name">Payment</field>
             <field name="code">vighnahar_agro.payment</field>
             <field name="prefix">PY-</field>

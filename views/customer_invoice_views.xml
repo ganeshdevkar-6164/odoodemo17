@@ -24,14 +24,15 @@
                             
                             <field name="party_id"/>
                             <field name="invoice_type"/>
+
                         </group>
                         <group>
                             <field name="date"/>
                             
-                            <field name="payment_terms_id"/>
-                            <field name="total_amount" readonly="1"/>
+                            <field name="payment_notification_date"/>
+                            <!-- <field name="total_amount" readonly="1"/>
                             <field name="downpayment" readonly="1" invisible="downpayment == 0"/>
-                            <field name="remaining_amount" readonly="1" invisible="downpayment == 0"/>
+                            <field name="remaining_amount" readonly="1" invisible="downpayment == 0"/> -->
                         </group>
                     </group>
                     <notebook>
@@ -52,9 +53,11 @@
                             </field>
                         </page>
                     </notebook>
-                    <group>
-                        <field name="total_amount" readonly="1"/>
-                    </group>
+                    <div style="text-align: right; padding-top: 20px;">
+                        <div>Total: <strong><field name="total_amount"/></strong></div>
+                        <div invisible="downpayment == 0">Downpayment: <strong><field name="downpayment"/></strong></div>
+                        <div invisible="downpayment == 0">Remaining Amount: <strong><field name="remaining_amount"/></strong></div>
+                    </div>
                 </sheet>
             </form>
         </field>
@@ -69,7 +72,7 @@
                 <field name="party_id" string="Party"/>
                 <field name="date" string="Date"/>
                 <field name="invoice_type" string="Invoice Type"/>
-                <field name="payment_terms_id"/>
+                <!-- <field name="payment_terms_id"/> -->
                 <field name="total_amount" string="Total Amount"/>
                 <field name="state" string="state"/>
             </tree>

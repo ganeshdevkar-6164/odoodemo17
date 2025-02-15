@@ -1,5 +1,10 @@
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError, ValidationError
+from datetime import datetime
+import requests
+import logging
+_logger = logging.getLogger(__name__)
+
 
 
 class CustomerInvoice(models.Model):
@@ -9,8 +14,8 @@ class CustomerInvoice(models.Model):
     name = fields.Char(string="Reference", default='New')
     
     party_id = fields.Many2one('vighnahar_agro.party', string="Party", required=True, domain=[('is_customer', '=', True)])
-    date = fields.Date(string="Date", default=fields.Date.today)
-    payment_terms_id = fields.Many2one('vighnahar_agro.payment_terms', string='Payment Terms')
+    date = fields.Datetime(string="Invoice Date", default=fields.Datetime.now)
+    
     invoice_type = fields.Selection([('regular', 'Regular Invoice'), ('percentage', 'Downpayment(Percentage)'), ('fixed_amount', 'Downpayment(Fixed Amount)')], string='Invoice Type', default='regular')
     total_amount = fields.Float(string='Total Amount', compute='_compute_total_amount', store=True)
     state = fields.Selection([('draft', 'Draft'), ('invoice', 'Invoice'), ('cancel', 'Cancel'), ('payment', 'In Payment'),('downpayment','Downpayment'),('paid','Paid')], string='Status', default='draft', required=True)
@@ -18,8 +23,8 @@ class CustomerInvoice(models.Model):
 
     customer_invoice_line_ids = fields.One2many('vighnahar_agro.customer_invoice_line', 'customer_invoice_id', string='Invoice Lines')
 
-    
-    downpayment = fields.Float(string='Downpayment Amount', default=0.0)
+    payment_notification_date = fields.Datetime(string='Payment Notification Date')
+    downpayment = fields.Float(string='Downpayment Amount', default=0.0,  readonly=True)
     remaining_amount = fields.Float(string='Remaining Amount', compute='_compute_remaining_amount', store=True)
     
     @api.depends('total_amount', 'downpayment')
@@ -71,8 +76,67 @@ class CustomerInvoice(models.Model):
                 }
             else:
                 rec.state = 'draft'
+    @api.model
+    def create_cron_job(self):
+        """ Create the scheduled action (cron job) programmatically. """
+        cron_model = self.env['ir.cron']
+        existing_cron = cron_model.search([('name', '=', 'Send Payment Reminder Cron')])
 
+        if not existing_cron:
+            cron_model.create({
+                'name': 'Send Payment Reminder Cron',
+                'model_id': self.env.ref('vighnahar_agro.model_vighnahar_agro_customer_invoice').id,
+                'state': 'code',
+                'code': 'model.send_payment_reminder()',  # Method to call
+                'interval_type': 'minutes',  # You can set this to minutes, hours, days, etc.
+                'interval_number': 1440,  # 1440 minutes = 1 day, adjust this based on your needs
+                'numbercall': -1,  # Infinite execution
+                'nextcall': fields.Datetime.now(),
+            })
 
+    @api.model
+    def send_payment_reminder(self):
+        """ Scheduled action to send payment reminders """
+        invoices = self.env['vighnahar_agro.customer_invoice'].search([
+            ('state', 'in', ['invoice', 'payment', 'downpayment']),
+            ('payment_notification_date', '!=', False),
+            ('payment_notification_date', '<=', fields.Datetime.now())
+        ])
+
+        for invoice in invoices:
+            if invoice.party_id.contact:
+                message = "Your payment is not done yet."
+                self.send_whatsapp_message(invoice.party_id.contact, message)       
+    
+
+    def send_whatsapp_message(self, phone_number, message):
+        """ Function to send WhatsApp message using UltraMsg API """
+        instance_id = 'instance107303'  # Replace with your instance ID
+        token = 'mpvx9yyty0vm5v5w'  # Replace with your API token
+        url = f"https://api.ultramsg.com/{instance_id}/messages/chat"
+       
+        payload = {
+            "token": token,
+            "to": phone_number.strip(),
+            "body": message
+        }
+ 
+        # Send the POST request to UltraMsg API
+        response = requests.post(url, data=payload)
+ 
+        if response.status_code == 200:
+            _logger.info(f"WhatsApp message successfully sent to {phone_number}")
+        else:
+            _logger.error(f"Failed to send WhatsApp message to {phone_number}. Response: {response.text}")
+
+    @api.model
+    def init(self):
+        """ Initialize method to create the cron job when the module is installed """
+        super(CustomerInvoice, self).init()
+        self.create_cron_job()
+
+            
+            
     def action_payment(self):
         for rec in self:
             payment_vals = {
@@ -122,7 +186,7 @@ class CustomerInvoiceLine(models.Model):
     product_id = fields.Many2one('vighnahar_agro.product', string='Product', domain="[('product_category_id', '=', product_category_id)]")
     quantity = fields.Float(string='Quantity', digits=(16, 4))
     uom_id = fields.Many2one('vighnahar_agro.uom', string='UOM', domain="[('category_id', '=', uom_category_id)]")
-    price = fields.Float(string='Unit Price', related='product_id.cost_price', store=True)
+    price = fields.Float(string='Unit Price', related='product_id.sales_price', store=True)
     total = fields.Float(string='Total Price', compute='_compute_total', store=True)
     converted_quantity = fields.Float(string='Converted Quantity', digits=(16, 4), compute='_compute_converted_quantity', store=True)
     converted_uom_id = fields.Many2one('vighnahar_agro.uom', string='Converted UOM', compute='_compute_converted_quantity', store=True)
@@ -261,7 +325,7 @@ class DownpaymentWizard(models.TransientModel):
         if not downpayment_product:
             downpayment_product = self.env['vighnahar_agro.product'].create({
                 'name': 'Downpayment',
-                'type': 'service',  # assuming it's a service product
+                'product_type': 'service',  # assuming it's a service product
             })
 
         # Create a payment line for the downpayment product

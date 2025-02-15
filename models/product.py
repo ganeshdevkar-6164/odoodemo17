@@ -15,6 +15,7 @@ class Product(models.Model):
     
     
     
+    
     # for General Information
     product_type = fields.Selection([('consumable','Consumable'),
                                      ( 'service','Service'), 
@@ -26,6 +27,27 @@ class Product(models.Model):
     uom_id = fields.Many2one('vighnahar_agro.uom' , string = "Unit Of Measures", domain="[('category_id', '=', category_id)]")
     
     define_date = fields.Date(string = "Product Define", default=fields.Date.today)
+    
+    
+    #On Hand Quantity And Uom In Product Logic
+    quantity = fields.Float(string="On-Hand Quantity", compute="_compute_quantity", store=False)
+    unit_of_measure_id = fields.Many2one('vighnahar_agro.uom', string="Unit of Measure")
+    
+    @api.depends('product_category_id')
+    def _compute_quantity(self):
+        for product in self:
+            inventory = self.env['vighnahar_agro.inventory_line'].search([
+                ('product_id', '=', product.id)
+            ])
+            total_quantity = sum(inventory.mapped('quantity'))
+            product.quantity = total_quantity
+            
+            # Assuming you want to display the first available unit of measure
+            if inventory:
+                product.unit_of_measure_id = inventory[0].uom_id
+            else:
+                product.unit_of_measure_id = False
+    
     
     
     

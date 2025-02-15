@@ -2,6 +2,8 @@ from odoo import models, fields, api, _
 from odoo.exceptions import UserError, ValidationError
 import requests
 
+
+
 class Party(models.Model):
     _name = 'vighnahar_agro.party'
     _description = 'Party'

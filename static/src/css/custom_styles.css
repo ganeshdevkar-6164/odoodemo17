@@ -13,3 +13,17 @@
 .form-group field {
     flex: 1;
 }
+
+
+.btn-blue {
+    background-color: rgb(255, 255, 255); /* White background */
+    color: rgb(25, 0, 255); /* Text color set to red */
+    font-weight: bold; /* Make text bold */
+    border: 2px solid rgb(0, 26, 255); /* Red border */
+    text-align: center; /* Center the text horizontally */
+    display: inline-flex; /* Use flexbox for centering */
+    align-items: center; /* Center the text vertically */
+    justify-content: center; /* Center the text horizontally */
+    padding: 10px 20px; /* Adjust padding as needed */
+    border-radius: 4px; /* Optional: rounded corners */
+}

@@ -24,6 +24,7 @@
                             <field name="name"/>
                             <field name="description"/>
                             <field name="party_id"/>
+                            <field name="warehouse_id"/>
                         </group>
                         <group>
                             <field name="date"/>
@@ -95,6 +96,7 @@
                 <field name="name" string="Name"/>
                 <field name="party_id" string="Party/Supplier"/>
                 <field name="date" string="Date"/>
+                <field name="warehouse_id"/>
                 <field name="total_amount" string="Total Amount"/>
                 <field name="state"/>
                 <field name="payment_status" string="Payment Status" widget="badge" decoration-success="payment_status == 'fully_paid'"/>
