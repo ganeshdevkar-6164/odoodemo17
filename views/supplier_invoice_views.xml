@@ -19,6 +19,14 @@
                 </header>
 
                 <sheet>
+                    <!-- Add Payment Status Badge -->
+                    <div class="o_form_invisible_fields" style="position: absolute; right: 10px; top: 10px; padding: 5px;">
+                        <!-- <span t-att-class="'badge badge-' + {'pending': 'danger', 'partially_paid': 'warning', 'fully_paid': 'success'}[payment_status]">
+                            <field name="payment_status"/>
+                        </span> -->
+                        <field name="payment_status" string="Payment Status" widget="badge" decoration-success="payment_status == 'fully_paid'"
+                        decoration-info="payment_status == 'partially_paid'" decoration-warning="payment_status == 'pending'" invisible="state != 'post'"/>
+                    </div> 
                     <group>
                         <group>
                             <field name="name"/>
@@ -32,31 +40,6 @@
                             <field name="payment_status" invisible="1"/>
                         </group>
                     </group>
-
-                    <!-- Badge for Payment Status in top-right corner -->
-                    <!-- <div class="oe_button_box" style="position: absolute; top: 10px; right: 10px;">
-                        <span t-attf-class="badge badge-#{'success' if record.payment_status == 'fully_paid' else 'danger'}">
-                            <field name="payment_status"></field>
-                        </span>
-                    </div> -->
-
-                    <!-- Badges to show payment status -->
-                    <div class="o_form_invisible_fields">
-                        <!-- Fully Paid Badge -->
-                        <span class="badge badge-success" invisible="payment_status != 'fully_paid'">
-                            Fully Paid
-                        </span>
-
-                        <!-- Partially Paid Badge -->
-                        <span class="badge badge-warning" invisible="payment_status != 'partially_paid'">
-                            Partially Paid
-                        </span>
-
-                        <!-- Pending Badge -->
-                        <span class="badge badge-danger" invisible="payment_status != 'pending'">
-                            Pending
-                        </span>
-                    </div>
 
                     <notebook>
                         <page string="Invoice Lines">
@@ -79,8 +62,8 @@
 
                     <div style="text-align: right; padding-top: 20px;">
                         <div>Total: <strong><field name="total_amount"/></strong></div>
-                        <div>Amount Due: <strong><field name="amount_due"/></strong></div>
-                        <div>Paid Amount: <strong><field name="paid_amount"/></strong></div>
+                        <div invisible="amount_due == 0.0">Amount Due: <strong><field name="amount_due"/></strong></div>
+                       <div invisible="paid_amount == 0.0">Paid Amount: <strong><field name="paid_amount"/></strong></div>
                     </div>
                 </sheet>
             </form>

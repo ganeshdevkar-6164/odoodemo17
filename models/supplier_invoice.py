@@ -35,15 +35,18 @@ class SupplierInvoice(models.Model):
         for record in self:
             record.amount_due = record.total_amount - record.paid_amount
 
-    @api.depends('total_amount', 'paid_amount')
+    @api.depends('total_amount', 'paid_amount', 'supplier_invoice_line_ids')
     def _compute_payment_status(self):
         for record in self:
-            if record.paid_amount == record.total_amount:
+            # Check if there are no invoice lines or if the total amount is 0, then set status to 'pending'
+            if not record.supplier_invoice_line_ids or record.total_amount == 0:
+                record.payment_status = 'pending'
+            elif record.paid_amount == record.total_amount:
                 record.payment_status = 'fully_paid'
             elif record.paid_amount > 0.0:
                 record.payment_status = 'partially_paid'
             else:
-                record.payment_status = 'pending'
+                record.payment_status = 'pending' 
 
     @api.depends('payment_status')
     def _compute_badge_color(self):
