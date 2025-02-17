@@ -10,18 +10,15 @@
                     <button name="action_confirm" type="object" string="Confirm" class="oe_highlight"
                         invisible="state != 'draft'" />
                     <button name="action_register_payment" type="object" string="Register Payment" class="oe_highlight"
-                        invisible="payment_status == 'fully_paid' or state != 'post'" />
-                    <!-- <button name="action_cancel" type="object" string="Cancel" invisible="state != 'post'" /> -->
+                        invisible="payment_status == 'paid' or state != 'post'" />
                     
                     <!-- Add Status Bar for Invoice Status -->
-                    <field name="state" widget="statusbar" statusbar_visible="draft,post,canceled"/>
-                    <!-- <field name="payment_status" widget="statusbar" statusbar_visible="pending,fully_paid,partially_paid"/> -->
+                    <field name="state" widget="statusbar" statusbar_visible="draft,post"/>
                 </header>
 
                 <sheet>
-                    <!-- Using Standard Odoo Ribbons -->
-                    <!-- <div class="o_form_invisible_fields" style="position: absolute; right: 10px; top: 10px;"> -->
-                        <!-- Paid Ribbon -->
+                    <!-- Payment Status Ribbons -->
+                    <!-- Paid Ribbon -->
                     <widget name="web_ribbon" title="Paid" 
                         invisible="payment_status != 'paid'" 
                         bg_color="text-bg-success" />
@@ -31,9 +28,8 @@
                         bg_color="text-bg-info" />
                     <!-- Pending Payment Ribbon -->
                     <widget name="web_ribbon" title="Pending" 
-                        invisible="payment_status != 'pending'" 
+                        invisible="state != 'post' or payment_status != 'pending'" 
                         bg_color="text-bg-warning" />
-                    <!-- </div> -->
                     <group>
                         <group>
                             <field name="name"/>
