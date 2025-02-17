@@ -7,7 +7,7 @@
             <field name="arch" type="xml">
                 <form string="Product">
                     <sheet>
-                        <div name="button_box" position="inside">
+                        <div name="button_box" position="inside" invisible="quantity == 0">
                             <div class="oe_stat_button btn-blue">
                                 <i class="fa fa-cubes" style="margin-right: 8px;"></i> <!-- Added margin to create space -->
                                 <div class="o_field_widget o_stat_info">

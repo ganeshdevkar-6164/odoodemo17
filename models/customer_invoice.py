@@ -19,9 +19,10 @@ class CustomerInvoice(models.Model):
     invoice_type = fields.Selection([('regular', 'Regular Invoice'), ('percentage', 'Downpayment(Percentage)'), ('fixed_amount', 'Downpayment(Fixed Amount)')], string='Invoice Type', default='regular')
     total_amount = fields.Float(string='Total Amount', compute='_compute_total_amount', store=True)
     state = fields.Selection([('draft', 'Draft'), ('invoice', 'Invoice'), ('cancel', 'Cancel'), ('payment', 'In Payment'),('downpayment','Downpayment'),('paid','Paid')], string='Status', default='draft', required=True)
+    warehouse_id = fields.Many2one('vighnahar_agro.warehouse', string = "Warehouse", required=True)
     payment_id = fields.Many2one('vighnahar_agro.payment', string='Payment')
 
-    customer_invoice_line_ids = fields.One2many('vighnahar_agro.customer_invoice_line', 'customer_invoice_id', string='Invoice Lines')
+    customer_invoice_line_ids = fields.One2many('vighnahar_agro.customer_invoice_line', 'customer_invoice_id', string='Invoice Lines', required=True)
 
     payment_notification_date = fields.Datetime(string='Payment Notification Date')
     downpayment = fields.Float(string='Downpayment Amount', default=0.0,  readonly=True)
@@ -76,6 +77,41 @@ class CustomerInvoice(models.Model):
                 }
             else:
                 rec.state = 'draft'
+            
+            self._update_physical_inventory_stock()
+            
+            
+            
+    def _update_physical_inventory_stock(self):
+        """ Update physical inventory stock when the invoice is created. """
+        for rec in self:
+            # Find the physical inventory record for the selected warehouse
+            physical_inventory = self.env['vighnahar_agro.physical_inventory'].search([
+                ('warehouse_id', '=', rec.warehouse_id.id)
+            ], limit=1)
+            
+            if not physical_inventory:
+                raise UserError(_("No physical inventory found for the selected warehouse: %s" % rec.warehouse_id.name))
+            
+            # Loop through each invoice line and update the corresponding inventory record
+            for line in rec.customer_invoice_line_ids:
+                # Find the corresponding inventory line for the product in the physical inventory
+                inventory_line = self.env['vighnahar_agro.inventory_line'].search([
+                    ('physical_inventory_id', '=', physical_inventory.id),
+                    ('product_id', '=', line.product_id.id)
+                ], limit=1)
+
+                if inventory_line:
+                    # Deduct the converted quantity from the on-hand quantity
+                    if inventory_line.quantity >= line.converted_quantity:
+                        inventory_line.quantity -= line.converted_quantity
+                    else:
+                        raise UserError(_("Not enough stock in the warehouse: %s \nfor the product: %s. \nAvailable quantity is: %s" %
+                            (inventory_line.physical_inventory_id.warehouse_id.name, line.product_id.name, inventory_line.quantity)
+                        ))
+                else:
+                    raise UserError(_("Product: %s not found in warehouse: %s" % (line.product_id.name, rec.warehouse_id.name)))
+            
     @api.model
     def create_cron_job(self):
         """ Create the scheduled action (cron job) programmatically. """
@@ -144,6 +180,7 @@ class CustomerInvoice(models.Model):
                 'date': fields.Date.today(),
                 'amount': rec.remaining_amount,
                 'party_id': rec.party_id.id,
+                'warehouse_id' : rec.warehouse_id.id,
                 'invoice_type': rec.invoice_type,
                 'payment_line_ids': [(0, 0, {
                     'product_id': line.product_id.id,
@@ -183,7 +220,7 @@ class CustomerInvoiceLine(models.Model):
     customer_invoice_id = fields.Many2one('vighnahar_agro.customer_invoice', string='Invoice')
     uom_category_id = fields.Many2one('vighnahar_agro.uom_category', related='product_id.category_id', string='UOM Category')
     product_category_id = fields.Many2one('vighnahar_agro.product_category', string='Product Category', domain="[('id', 'in', available_product_category_ids)]")
-    product_id = fields.Many2one('vighnahar_agro.product', string='Product', domain="[('product_category_id', '=', product_category_id)]")
+    product_id = fields.Many2one('vighnahar_agro.product', string='Product', domain="[('product_category_id', '=', product_category_id)]", required=True)
     quantity = fields.Float(string='Quantity', digits=(16, 4))
     uom_id = fields.Many2one('vighnahar_agro.uom', string='UOM', domain="[('category_id', '=', uom_category_id)]")
     price = fields.Float(string='Unit Price', related='product_id.sales_price', store=True)
@@ -192,6 +229,42 @@ class CustomerInvoiceLine(models.Model):
     converted_uom_id = fields.Many2one('vighnahar_agro.uom', string='Converted UOM', compute='_compute_converted_quantity', store=True)
     available_product_category_ids = fields.Many2many('vighnahar_agro.product_category', compute='_compute_available_product_categories', relation='vighnahar_agro_prod_cat_invoice_line_rel')
     
+    is_available = fields.Boolean(
+        string='Is Available',
+        compute='_compute_is_available',
+        store=False,
+        help="Indicates if the converted quantity is available in the warehouse."
+    )
+
+    @api.depends('product_id', 'customer_invoice_id.warehouse_id', 'converted_quantity')
+    def _compute_is_available(self):
+        for line in self:
+            if not line.product_id or not line.customer_invoice_id.warehouse_id:
+                line.is_available = False
+                continue
+
+            # Find the physical inventory for the selected warehouse
+            physical_inventory = self.env['vighnahar_agro.physical_inventory'].search([
+                ('warehouse_id', '=', line.customer_invoice_id.warehouse_id.id)
+            ], limit=1)
+
+            if not physical_inventory:
+                line.is_available = False
+                continue
+
+            # Find the inventory line for the product
+            inventory_line = self.env['vighnahar_agro.inventory_line'].search([
+                ('physical_inventory_id', '=', physical_inventory.id),
+                ('product_id', '=', line.product_id.id)
+            ], limit=1)
+
+            if inventory_line and line.converted_quantity <= inventory_line.quantity:
+                line.is_available = True
+            else:
+                line.is_available = False
+    
+                
+                
     @api.depends('quantity', 'uom_id', 'uom_category_id')
     def _compute_converted_quantity(self):
         for line in self:
@@ -220,8 +293,8 @@ class CustomerInvoiceLine(models.Model):
             line.available_product_category_ids = category_ids
 
 
-
-
+    
+    
 
 
 
@@ -236,8 +309,8 @@ class Payment(models.Model):
     date = fields.Date(string="Date", default=fields.Date.today)
     invoice_type = fields.Selection([('regular', 'Regular Invoice'), ('percentage', 'Downpayment(Percentage)'), ('fixed_amount', 'Downpayment(Fixed Amount)')], string='Invoice Type', default='regular')
     amount = fields.Float(string='Amount', compute='_compute_amount', store=True)
-    payment_terms_id = fields.Many2one('vighnahar_agro.payment_terms', string='Payment Terms')
     state = fields.Selection([('draft', 'Draft'), ('paid', 'Paid')], string='Status', default='draft', required=True)
+    warehouse_id = fields.Many2one('vighnahar_agro.warehouse', string = "Warehouse", required=True)
     payment_line_ids = fields.One2many('vighnahar_agro.payment_line', 'payment_id', string='Payment Lines')
 
     @api.model_create_multi
@@ -343,6 +416,7 @@ class DownpaymentWizard(models.TransientModel):
             'date': fields.Date.today(),
             'amount': downpayment_amount,
             'party_id': self.customer_invoice_id.party_id.id,
+            'warehouse_id':self.customer_invoice_id.warehouse_id.id,
             'invoice_type': self.invoice_type,
             'payment_line_ids': [(0, 0, payment_line_vals)],
         }

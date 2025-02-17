@@ -27,3 +27,12 @@
     padding: 10px 20px; /* Adjust padding as needed */
     border-radius: 4px; /* Optional: rounded corners */
 }
+
+.oe_color_red {
+    background-color: #ffcccc !important; /* Red */
+}
+
+.oe_color_green {
+    background-color: #ccffcc !important; /* Green */
+}
+
