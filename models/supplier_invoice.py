@@ -19,44 +19,32 @@ class SupplierInvoice(models.Model):
     state = fields.Selection([
         ('draft', 'Draft'),
         ('post', 'Posted'),
-        ('canceled', 'Canceled'),
     ], default='draft', string="Invoice Status")
     
     payment_status = fields.Selection([
         ('pending', 'Pending'),
-        ('partially_paid', 'Partially Paid'),
-        ('fully_paid', 'Fully Paid'),
-    ], compute='_compute_payment_status', string='Payment Status')
-    
-    badge_color = fields.Char(compute='_compute_badge_color', string='Badge Color')
+        ('partial', 'Partial'),
+        ('paid', 'Paid'),
+    ], compute='_compute_payment_status', string='Payment Status', default='pending', store=True)
 
+    
     @api.depends('total_amount', 'paid_amount')
     def _compute_amount_due(self):
         for record in self:
             record.amount_due = record.total_amount - record.paid_amount
 
-    @api.depends('total_amount', 'paid_amount', 'supplier_invoice_line_ids')
+    @api.depends('total_amount', 'paid_amount')
     def _compute_payment_status(self):
         for record in self:
-            # Check if there are no invoice lines or if the total amount is 0, then set status to 'pending'
+            # _logger.info(f"Computing payment status for {record.id}: total_amount = {record.total_amount}, paid_amount = {record.paid_amount}")
             if not record.supplier_invoice_line_ids or record.total_amount == 0:
                 record.payment_status = 'pending'
             elif record.paid_amount == record.total_amount:
-                record.payment_status = 'fully_paid'
+                record.payment_status = 'paid'
             elif record.paid_amount > 0.0:
-                record.payment_status = 'partially_paid'
+                record.payment_status = 'partial'
             else:
-                record.payment_status = 'pending' 
-
-    @api.depends('payment_status')
-    def _compute_badge_color(self):
-        for record in self:
-            if record.payment_status == 'fully_paid':
-                record.badge_color = 'green'
-            elif record.payment_status == 'partially_paid':
-                record.badge_color = 'orange'
-            else:
-                record.badge_color = 'red'
+                record.payment_status = 'pending'
 
     # Generate unique sequence number    
     @api.model
@@ -99,13 +87,7 @@ class SupplierInvoice(models.Model):
             },
         }
 
-    # Action to mark the invoice as paid
-    def action_mark_as_paid(self):
-        if self.total_amount == self.paid_amount:
-            self.state = 'post'  # Mark the invoice as posted after fully paid
-        else:
-            raise ValueError("Cannot mark as paid, total amount does not match paid amount.")
-
+    
     # Action to confirm the invoice(nachiket Update)
     def action_confirm(self):
         # Step 1: Check if the warehouse exists in PhysicalInventory, if not create it
@@ -146,10 +128,6 @@ class SupplierInvoice(models.Model):
         # Step 3: Set the state of the invoice to 'post'
         self.state = 'post'
         
-    # Action to cancel the invoice
-    def action_cancel(self):
-        self.state = 'canceled'
-
 
 class SupplierInvoiceLine(models.Model):
     _name = 'vighnahar_agro.supplier_invoice_line'

@@ -18,6 +18,9 @@
                     <field name="state" widget="statusbar" statusbar_visible="draft,invoice"/>
                 </header>
                 <sheet>
+                    <widget name="web_ribbon" title="Paid" 
+                            invisible="state != 'paid'" 
+                            bg_color="text-bg-success" />
                     <group>
                         <group>
                             <field name="name"/>
