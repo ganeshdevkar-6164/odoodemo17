@@ -10,11 +10,11 @@
                     <button name="action_confirm" type="object" string="Confirm" class="oe_highlight"
                         invisible="state != 'draft'" />
                     <button name="action_register_payment" type="object" string="Register Payment" class="oe_highlight"
-                        invisible="payment_status == 'fully_paid' or state != 'post'" />
+                        invisible="payment_status == 'paid' or state != 'post'" />
                     <!-- <button name="action_cancel" type="object" string="Cancel" invisible="state != 'post'" /> -->
                     
                     <!-- Add Status Bar for Invoice Status -->
-                    <field name="state" widget="statusbar" statusbar_visible="draft,post,canceled"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,post"/>
                     <!-- <field name="payment_status" widget="statusbar" statusbar_visible="pending,fully_paid,partially_paid"/> -->
                 </header>
 

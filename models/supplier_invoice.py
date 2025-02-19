@@ -124,6 +124,8 @@ class SupplierInvoice(models.Model):
                     'quantity': line.converted_quantity,
                     'uom_id': line.converted_uom_id.id,
                 })
+            
+            
 
         # Step 3: Set the state of the invoice to 'post'
         self.state = 'post'

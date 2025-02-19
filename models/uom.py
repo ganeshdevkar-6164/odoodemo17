@@ -54,9 +54,9 @@ class AttributesLine(models.Model):
     
 
 
-class PaymentTerms(models.Model):
-    _name = 'vighnahar_agro.payment_terms'
-    _description = 'Payment Terms'  
+# class PaymentTerms(models.Model):
+#     _name = 'vighnahar_agro.payment_terms'
+#     _description = 'Payment Terms'  
     
-    name = fields.Char(string='Payment Terms', required=True)
-    define_date = fields.Datetime(string="Define Date", default=fields.Datetime.now)
+#     name = fields.Char(string='Payment Terms', required=True)
+#     define_date = fields.Datetime(string="Define Date", default=fields.Datetime.now)

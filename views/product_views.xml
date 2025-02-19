@@ -124,11 +124,11 @@
                             <page string="Purchase" invisible="can_be_purchased == False">
                                 <field name="supplier_info_ids" widget="one2many_list">
                                     <tree editable="bottom">
-                                        <field name="party_id"/>
-                                        <field name="price"/>
-                                        <field name="uom_id" optional = "hide"/>
-                                        <field name="min_qty" optional = "hide"/>
-                                        <field name="delay" />
+                                        <field name="party_id" string = "Vendor"/>
+                                        <field name="price" string = "Price"/>
+                                        <field name="uom_id" string = "UOM" optional = "hide"/>
+                                        <field name="min_qty" string = "Minimal Quantity" optional = "hide"/>
+                                        <field name="delay" string = "Delivery Lead Time"/>
                                         <field name="company_id" optional = "hide"/>
 
                                     </tree>

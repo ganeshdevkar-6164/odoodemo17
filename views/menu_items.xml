@@ -10,10 +10,10 @@
 
         <menuitem id="menu_inventory" name="Inventory" parent = "menu_vighnahar_agro" sequence="6"/>
 
-        
+        <menuitem id="menu_accounting" name="Accounting" parent = "menu_vighnahar_agro" sequence="7"/>
 
 
-        <menuitem id="menu_configuration" name="Configuration" parent = "menu_vighnahar_agro" sequence="7"/>
+        <menuitem id="menu_configuration" name="Configuration" parent = "menu_vighnahar_agro" sequence="8"/>
 
     </data>
 

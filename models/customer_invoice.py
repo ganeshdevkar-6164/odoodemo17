@@ -112,65 +112,7 @@ class CustomerInvoice(models.Model):
                 else:
                     raise UserError(_("Product: %s not found in warehouse: %s" % (line.product_id.name, rec.warehouse_id.name)))
             
-    @api.model
-    def create_cron_job(self):
-        """ Create the scheduled action (cron job) programmatically. """
-        cron_model = self.env['ir.cron']
-        existing_cron = cron_model.search([('name', '=', 'Send Payment Reminder Cron')])
-
-        if not existing_cron:
-            cron_model.create({
-                'name': 'Send Payment Reminder Cron',
-                'model_id': self.env.ref('vighnahar_agro.model_vighnahar_agro_customer_invoice').id,
-                'state': 'code',
-                'code': 'model.send_payment_reminder()',  # Method to call
-                'interval_type': 'minutes',  # You can set this to minutes, hours, days, etc.
-                'interval_number': 1440,  # 1440 minutes = 1 day, adjust this based on your needs
-                'numbercall': -1,  # Infinite execution
-                'nextcall': fields.Datetime.now(),
-            })
-
-    @api.model
-    def send_payment_reminder(self):
-        """ Scheduled action to send payment reminders """
-        invoices = self.env['vighnahar_agro.customer_invoice'].search([
-            ('state', 'in', ['invoice', 'payment', 'downpayment']),
-            ('payment_notification_date', '!=', False),
-            ('payment_notification_date', '<=', fields.Datetime.now())
-        ])
-
-        for invoice in invoices:
-            if invoice.party_id.contact:
-                message = "Your payment is not done yet."
-                self.send_whatsapp_message(invoice.party_id.contact, message)       
     
-
-    def send_whatsapp_message(self, phone_number, message):
-        """ Function to send WhatsApp message using UltraMsg API """
-        instance_id = 'instance107303'  # Replace with your instance ID
-        token = 'mpvx9yyty0vm5v5w'  # Replace with your API token
-        url = f"https://api.ultramsg.com/{instance_id}/messages/chat"
-       
-        payload = {
-            "token": token,
-            "to": phone_number.strip(),
-            "body": message
-        }
- 
-        # Send the POST request to UltraMsg API
-        response = requests.post(url, data=payload)
- 
-        if response.status_code == 200:
-            _logger.info(f"WhatsApp message successfully sent to {phone_number}")
-        else:
-            _logger.error(f"Failed to send WhatsApp message to {phone_number}. Response: {response.text}")
-
-    @api.model
-    def init(self):
-        """ Initialize method to create the cron job when the module is installed """
-        super(CustomerInvoice, self).init()
-        self.create_cron_job()
-
             
             
     def action_payment(self):

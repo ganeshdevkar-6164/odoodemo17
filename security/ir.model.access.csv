@@ -17,7 +17,7 @@ access_vighnahar_agro_customer_invoice_line,vighnahar_agro.customer_invoice_line
 access_vighnahar_agro_payment,vighnahar_agro.payment,model_vighnahar_agro_payment,,1,1,1,1
 access_vighnahar_agro_payment_line,vighnahar_agro.payment_line,model_vighnahar_agro_payment_line,,1,1,1,1
 access_vighnahar_agro_downpayment_wizard,vighnahar_agro.downpayment_wizard,model_vighnahar_agro_downpayment_wizard,,1,1,1,1
-access_vighnahar_agro_payment_terms,vighnahar_agro.payment_terms,model_vighnahar_agro_payment_terms,,1,1,1,1
+
 access_vighnahar_agro_warehouse,vighnahar_agro.warehouse,model_vighnahar_agro_warehouse,,1,1,1,1
 access_vighnahar_physical_inventory,vighnahar_agro.physical_inventory,model_vighnahar_agro_physical_inventory,,1,1,1,1
 access_vighnahar_agro_inventory_line,vighnahar_agro.inventory_line,model_vighnahar_agro_inventory_line,,1,1,1,1
