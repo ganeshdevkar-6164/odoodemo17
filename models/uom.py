@@ -60,3 +60,5 @@ class AttributesLine(models.Model):
     
 #     name = fields.Char(string='Payment Terms', required=True)
 #     define_date = fields.Datetime(string="Define Date", default=fields.Datetime.now)
+
+

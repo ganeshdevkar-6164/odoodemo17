@@ -15,7 +15,11 @@ class Party(models.Model):
     documents_name = fields.Char(string = "Document Name")
     is_supplier = fields.Boolean(string='Supplier')
     is_customer = fields.Boolean(string='Customer')
-    party_type = fields.Selection([('farmer','Farmer'),('trader','Trader')], string='Party Type', default = 'farmer')
+    party_type = fields.Selection([
+        ('farmer','Farmer'),
+        ('trader','Trader'),
+        ('labour','Labour')
+        ], string='Party Type',required=True, default = 'farmer')
     
     # Personal Information
     address = fields.Char(string='Address', required=True)
@@ -36,7 +40,8 @@ class Party(models.Model):
     
     
     
-    
+    #invoiceing
+    bank_account_ids = fields.One2many('vighnahar_agro.bank_account', 'party_id', string='Bank Account')
     
     
     #Farms Details Id 

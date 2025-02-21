@@ -11,14 +11,17 @@
                         invisible="state != 'draft'" />
                     <button name="action_register_payment" type="object" string="Register Payment" class="oe_highlight"
                         invisible="payment_status == 'paid' or state != 'post'" />
+                    <!-- <button name="action_cancel" type="object" string="Cancel" invisible="state != 'post'" /> -->
                     
                     <!-- Add Status Bar for Invoice Status -->
                     <field name="state" widget="statusbar" statusbar_visible="draft,post"/>
+                    <!-- <field name="payment_status" widget="statusbar" statusbar_visible="pending,fully_paid,partially_paid"/> -->
                 </header>
 
                 <sheet>
-                    <!-- Payment Status Ribbons -->
-                    <!-- Paid Ribbon -->
+                    <!-- Using Standard Odoo Ribbons -->
+                    <!-- <div class="o_form_invisible_fields" style="position: absolute; right: 10px; top: 10px;"> -->
+                        <!-- Paid Ribbon -->
                     <widget name="web_ribbon" title="Paid" 
                         invisible="payment_status != 'paid'" 
                         bg_color="text-bg-success" />
@@ -28,22 +31,24 @@
                         bg_color="text-bg-info" />
                     <!-- Pending Payment Ribbon -->
                     <widget name="web_ribbon" title="Pending" 
-                        invisible="state != 'post' or payment_status != 'pending'" 
+                        invisible="payment_status != 'pending'" 
                         bg_color="text-bg-warning" />
+                    <!-- </div> -->
                     <group>
                         <group>
-                            <field name="name"/>
+                            <field name="name"/>                            
                             <field name="description"/>
-                            <field name="party_id"/>
+                            <field name="party_id"/>                                            
                             <field name="warehouse_id"/>
-                        </group>
-                        <group>
-                            <field name="date"/>
-                            <field name="total_amount" readonly="1"/>
+                            
+                        </group>                                                                                                                                                                                                         
+                        <group>                                     
+                            <field name="date"/>                        
+                            <field name="total_amount" readonly="1"/>           
                             <field name="payment_status" invisible="1"/>
+                            
                         </group>
                     </group>
-
                     <notebook>
                         <page string="Invoice Lines">
                             <field name="supplier_invoice_line_ids">
@@ -62,7 +67,6 @@
                             </field>
                         </page>
                     </notebook>
-
                     <div style="text-align: right; padding-top: 20px;">
                         <div>Total: <strong><field name="total_amount"/></strong></div>
                         <div invisible="amount_due == 0.0">Amount Due: <strong><field name="amount_due"/></strong></div>
@@ -78,7 +82,7 @@
         <field name="name">supplier_invoice.tree</field>
         <field name="model">vighnahar_agro.supplier_invoice</field>
         <field name="arch" type="xml">
-            <tree string="Supplier Invoices">
+            <tree string="Supplier Invoices" default_order="id desc">
                 <field name="name" string="Name"/>
                 <field name="party_id" string="Party/Supplier"/>
                 <field name="date" string="Date"/>
@@ -87,6 +91,7 @@
                 <field name="state"/>
                 <field name="payment_status" string="Payment Status" widget="badge" decoration-success="payment_status == 'paid'"
                  decoration-info="payment_status == 'partial'" decoration-warning="payment_status == 'pending'"/>
+                
             </tree>
         </field>
     </record>
@@ -111,7 +116,8 @@
                 <field name="amount"/>
                 <field name="payment_method"/>
                 <field name="invoice_id"/>
-                <field name="state"/>
+                <field name="state" widget="badge" decoration-success="state == 'paid'"
+                                                   decoration-info="state == 'draft'"/>
             </tree>
         </field>
     </record>
@@ -128,11 +134,13 @@
                             <field name="name"/>
                             <field name="payment_date"/>
                             <field name="amount"/>
+                            <field name="bank_account_id" invisible="payment_method != 'bank'" />
                         </group>
                         <group>
                             <field name="payment_method"/>
                             <field name="invoice_id" string="Memo" readonly="1"/>
                             <field name="state"/>
+                            
                         </group> 
                     </group>
                 </sheet>
@@ -152,4 +160,5 @@
     </record>
 
     <menuitem id="menu_supplier_payment" name="Supplier Payments" parent="menu_supplier" action="action_supplier_payment"/>
+
 </odoo>

@@ -73,7 +73,8 @@ class Product(models.Model):
     #for Purchase (Supplier Info Line)
     supplier_info_ids = fields.One2many('vighnahar_agro.supplier_info', 'product_id', string='Supplier Info')
     
-    
+    #for Sales (Customer Info Line)
+    customer_info_ids = fields.One2many('vighnahar_agro.customer_info', 'product_id', string='Supplier Info')
    
    
    
@@ -94,6 +95,20 @@ class AttributeLine(models.Model):
 class SupplierInfo(models.Model):
     _name = 'vighnahar_agro.supplier_info'
     _description = 'Supplier Info'
+    
+    
+    product_id = fields.Many2one('vighnahar_agro.product', string='Product')
+    party_id = fields.Many2one('vighnahar_agro.party', string='Vendor')
+    price = fields.Float(string='Price')
+    delay = fields.Integer(string='Delivery Lead Time')
+    uom_id = fields.Many2one('vighnahar_agro.uom', string='Unit of Measure')
+    min_qty = fields.Float(string='Minimal Quantity')
+    company_id = fields.Many2one('res.company', string='Company')
+    
+    
+class CUstomerInfo(models.Model):
+    _name = 'vighnahar_agro.customer_info'
+    _description = 'Customer Info'
     
     
     product_id = fields.Many2one('vighnahar_agro.product', string='Product')

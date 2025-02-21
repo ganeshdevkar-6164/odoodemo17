@@ -1,8 +1,10 @@
 from odoo import models, fields, api
+from odoo.exceptions import ValidationError
 
 class SupplierInvoice(models.Model):
     _name = 'vighnahar_agro.supplier_invoice'
     _description = 'Supplier Invoice'
+    _order = "id desc"
     
     name = fields.Char(string="Reference", required=True, copy=False, readonly=True, index=True, default='New')
     description = fields.Text(string="Description")
@@ -26,7 +28,8 @@ class SupplierInvoice(models.Model):
         ('partial', 'Partial'),
         ('paid', 'Paid'),
     ], compute='_compute_payment_status', string='Payment Status', default='pending', store=True)
-
+    
+    
     
     @api.depends('total_amount', 'paid_amount')
     def _compute_amount_due(self):
@@ -72,6 +75,9 @@ class SupplierInvoice(models.Model):
         # Calculate the remaining amount to be paid
         remaining_amount = self.total_amount - self.paid_amount
         
+        # Get the first bank account of the party (supplier)
+        default_bank_account = self.party_id.bank_account_ids[:1]
+        
         # Return the action to open the Supplier Payment form with pre-filled values
         return {
             'name': 'Register Payment',
@@ -84,50 +90,53 @@ class SupplierInvoice(models.Model):
                 'default_invoice_id': self.id,  # Set the default invoice
                 'default_amount': remaining_amount,  # Set the default amount to be paid
                 'default_state': 'draft',  # Set the payment state to draft by default
+                'default_bank_account_id': default_bank_account.id if default_bank_account else False,  # Set default bank account
             },
         }
 
     
     # Action to confirm the invoice(nachiket Update)
     def action_confirm(self):
-        # Step 1: Check if the warehouse exists in PhysicalInventory, if not create it
-        physical_inventory = self.env['vighnahar_agro.physical_inventory'].search([('warehouse_id', '=', self.warehouse_id.id)], limit=1)
-
+        physical_inventory = self.env['vighnahar_agro.physical_inventory'].search([
+            ('warehouse_id', '=', self.warehouse_id.id)], limit=1)
+        
         if not physical_inventory:
-            # If the warehouse doesn't exist in PhysicalInventory, create a new record
             physical_inventory = self.env['vighnahar_agro.physical_inventory'].create({
                 'warehouse_id': self.warehouse_id.id,
             })
-        
-        # Step 2: Update or create InventoryLine records for each invoice line
+
         for line in self.supplier_invoice_line_ids:
-            # Get or create the corresponding InventoryLine record
             inventory_line = self.env['vighnahar_agro.inventory_line'].search([
                 ('physical_inventory_id', '=', physical_inventory.id),
                 ('product_category_id', '=', line.product_category_id.id),
                 ('product_id', '=', line.product_id.id),
-                
             ], limit=1)
-
+            
             if inventory_line:
-                # If the record exists, add the new quantity to the existing quantity
-                inventory_line.write({
-                    'quantity': inventory_line.quantity + line.converted_quantity,  # Add the converted quantity
-                    'uom_id': line.converted_uom_id.id,  # Update UOM if necessary
-                })
+                inventory_line.write({'quantity': inventory_line.quantity + line.converted_quantity})
             else:
-                # If the record doesn't exist, create a new InventoryLine
                 self.env['vighnahar_agro.inventory_line'].create({
                     'physical_inventory_id': physical_inventory.id,
                     'product_category_id': line.product_category_id.id,
                     'product_id': line.product_id.id,
                     'quantity': line.converted_quantity,
-                    'uom_id': line.converted_uom_id.id,
                 })
             
+            supplier_info = self.env['vighnahar_agro.supplier_info'].search([
+                ('product_id', '=', line.product_id.id),
+                ('party_id', '=', self.party_id.id)
+            ], limit=1)
             
-
-        # Step 3: Set the state of the invoice to 'post'
+            if not supplier_info:
+                self.env['vighnahar_agro.supplier_info'].create({
+                    'product_id': line.product_id.id,
+                    'party_id': self.party_id.id,
+                    'price': line.price,
+                    'uom_id': line.converted_uom_id.id,
+                    'min_qty': 1,
+                })
+        
+        
         self.state = 'post'
         
 
@@ -141,7 +150,7 @@ class SupplierInvoiceLine(models.Model):
     product_id = fields.Many2one('vighnahar_agro.product', string='Product', domain="[('product_category_id', '=', product_category_id)]")
     quantity = fields.Float(string='Quantity', digits=(16, 4))
     uom_id = fields.Many2one('vighnahar_agro.uom', string='UOM', domain="[('category_id', '=', uom_category_id)]")
-    price = fields.Float(string='Unit Price', related='product_id.cost_price', store=True)
+    price = fields.Float(string='Unit Price', store=True, required = True)
     total = fields.Float(string='Total Price', compute='_compute_total', store=True)
     converted_quantity = fields.Float(string='Converted Quantity', digits=(16, 4), compute='_compute_converted_quantity', store=True)
     converted_uom_id = fields.Many2one('vighnahar_agro.uom', string='Converted UOM', compute='_compute_converted_quantity', store=True)
@@ -162,6 +171,25 @@ class SupplierInvoiceLine(models.Model):
                 line.converted_quantity = line.quantity
                 line.converted_uom_id = False
 
+    #instead of related field to display product cost price we use onchange
+    @api.onchange('product_id', 'invoice_id.party_id')
+    def _onchange_product_id(self):
+        """Set the price and UOM from supplier info if available; otherwise, use product cost price and default UOM."""
+        if self.product_id:
+            supplier_info = self.env['vighnahar_agro.supplier_info'].search([
+                ('product_id', '=', self.product_id.id),
+                ('party_id', '=', self.invoice_id.party_id.id)
+            ], limit=1)
+
+            if supplier_info:
+                self.price = supplier_info.price  # Use last purchased price
+                self.uom_id = supplier_info.uom_id  # Use the UOM from supplier info
+            else:
+                self.price = self.product_id.cost_price  # Use product's cost price
+                self.uom_id = self.product_id.uom_id  # Use product's default UOM
+
+
+    
     @api.depends('converted_quantity', 'price')
     def _compute_total(self):
         for line in self:
@@ -178,6 +206,7 @@ class SupplierInvoiceLine(models.Model):
 class SupplierPayment(models.Model):
     _name = 'vighnahar_agro.supplier_payment'
     _description = 'Supplier Payment'
+    _order = "id desc"
     
     name = fields.Char(string="Payment Reference", required=True, copy=False, readonly=True, index=True, default='New')
     payment_date = fields.Date(string='Payment Date', default=fields.Date.today)
@@ -190,6 +219,7 @@ class SupplierPayment(models.Model):
     ], string="Payment Method", required=True, default='cash')
     invoice_id = fields.Many2one('vighnahar_agro.supplier_invoice', string='Supplier Invoice', required=True)
     state = fields.Selection([('draft', 'Draft'), ('paid', 'Paid')], string="Payment Status", default='draft')
+    bank_account_id = fields.Many2one('vighnahar_agro.bank_account', string = "Bank Account")
 
     @api.model
     def create(self, vals):
@@ -204,4 +234,18 @@ class SupplierPayment(models.Model):
         # Optionally, update invoice total paid amount
         paid_amount = sum(payment.amount for payment in self.invoice_id.payment_ids if payment.state == 'paid')
         self.invoice_id.paid_amount = paid_amount
+
         
+    
+    
+    
+    @api.model
+    def default_get(self, fields):
+        res = super(SupplierPayment, self).default_get(fields)
+        
+        if 'invoice_id' in res:
+            invoice = self.env['vighnahar_agro.supplier_invoice'].browse(res['invoice_id'])
+            if invoice and invoice.party_id.bank_account_ids:
+                res['bank_account_id'] = invoice.party_id.bank_account_ids[:1].id  # Get first bank account
+        
+        return res

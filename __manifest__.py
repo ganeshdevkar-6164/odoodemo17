@@ -14,7 +14,8 @@
         'views/uom_views.xml',
         'views/party_views.xml',
         'views/inventory_stock_location_views.xml',
-        # 'views/accounts_views.xml', 
+        'views/bank_views.xml',
+        'views/accounts_views.xml', 
         'report/customer_invoice_templates.xml',
         'report/report.xml',
         

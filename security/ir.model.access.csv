@@ -2,6 +2,7 @@ id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_vighnahar_agro_product,vighnahar_agro.product,model_vighnahar_agro_product,,1,1,1,1
 access_vighnahar_agro_attribute_line,vighnahar_agro.attribute_line,model_vighnahar_agro_attribute_line,,1,1,1,1
 access_vighnahar_agro_supplier_info,vighnahar_agro.supplier_info,model_vighnahar_agro_supplier_info,,1,1,1,1
+access_vighnahar_agro_customer_info,vighnahar_agro.customer_info,model_vighnahar_agro_customer_info,,1,1,1,1
 access_vighnahar_agro_uom_category,vighnahar_agro.uom_category,model_vighnahar_agro_uom_category,,1,1,1,1
 access_vighnahar_agro_uom,vighnahar_agro.uom,model_vighnahar_agro_uom,,1,1,1,1
 access_vighnahar_agro_product_category,vighnahar_agro.product_category,model_vighnahar_agro_product_category,,1,1,1,1
@@ -21,3 +22,16 @@ access_vighnahar_agro_downpayment_wizard,vighnahar_agro.downpayment_wizard,model
 access_vighnahar_agro_warehouse,vighnahar_agro.warehouse,model_vighnahar_agro_warehouse,,1,1,1,1
 access_vighnahar_physical_inventory,vighnahar_agro.physical_inventory,model_vighnahar_agro_physical_inventory,,1,1,1,1
 access_vighnahar_agro_inventory_line,vighnahar_agro.inventory_line,model_vighnahar_agro_inventory_line,,1,1,1,1
+
+
+access_vighnahar_agro_banks,vighnahar_agro.banks,model_vighnahar_agro_banks,,1,1,1,1
+access_vighnahar_agro_bank_account,vighnahar_agro.bank_account,model_vighnahar_agro_bank_account,,1,1,1,1
+
+
+
+access_vighnahar_agro_account,vighnahar_agro.account,model_vighnahar_agro_account,,1,1,1,1
+access_vighnahar_agro_journal,vighnahar_agro.journal,model_vighnahar_agro_journal,,1,1,1,1
+
+
+access_vighnahar_agro_journal_entry,vighnahar_agro.journal_entry,model_vighnahar_agro_journal_entry,,1,1,1,1
+access_vighnahar_agro_journal_item,vighnahar_agro.journal_item,model_vighnahar_agro_journal_item,,1,1,1,1

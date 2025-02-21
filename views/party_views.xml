@@ -65,6 +65,15 @@
                                     </tree>
                                 </field>
                             </page>
+                            <page string = "Invoice">
+                                <field name="bank_account_ids" widget="one2many_list"  >
+                                    <tree editable="bottom">
+                                        <field name="name" string="Account Number"/> 
+                                        <field name="banks_id" string="Bank"/>
+                                        <field name="party_id" string="Account Holder"/>
+                                    </tree>
+                                </field>
+                            </page>
                         </notebook>   
                     </sheet>
                 </form>

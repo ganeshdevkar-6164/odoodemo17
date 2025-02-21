@@ -10,6 +10,7 @@ _logger = logging.getLogger(__name__)
 class CustomerInvoice(models.Model):
     _name = 'vighnahar_agro.customer_invoice'
     _description = 'Customer Invoice'
+    _order = "id desc"
 
     name = fields.Char(string="Reference", default='New')
     
@@ -21,12 +22,12 @@ class CustomerInvoice(models.Model):
     state = fields.Selection([('draft', 'Draft'), ('invoice', 'Invoice'), ('cancel', 'Cancel'), ('payment', 'In Payment'),('downpayment','Downpayment'),('paid','Paid')], string='Status', default='draft', required=True)
     warehouse_id = fields.Many2one('vighnahar_agro.warehouse', string = "Warehouse", required=True)
     payment_id = fields.Many2one('vighnahar_agro.payment', string='Payment')
-
-    customer_invoice_line_ids = fields.One2many('vighnahar_agro.customer_invoice_line', 'customer_invoice_id', string='Invoice Lines', required=True)
-
     payment_notification_date = fields.Datetime(string='Payment Notification Date')
     downpayment = fields.Float(string='Downpayment Amount', default=0.0,  readonly=True)
     remaining_amount = fields.Float(string='Remaining Amount', compute='_compute_remaining_amount', store=True)
+    customer_invoice_line_ids = fields.One2many('vighnahar_agro.customer_invoice_line', 'customer_invoice_id', string='Invoice Lines', required=True)
+    
+    
     
     @api.depends('total_amount', 'downpayment')
     def _compute_remaining_amount(self):
@@ -49,6 +50,7 @@ class CustomerInvoice(models.Model):
         for rec in self:
             if rec.invoice_type == 'regular':
                 rec.state = 'invoice'
+                
             elif rec.invoice_type == 'percentage':
                 # Open the Downpayment Wizard with the percentage field visible
                 return {
@@ -244,6 +246,7 @@ class CustomerInvoiceLine(models.Model):
 class Payment(models.Model):
     _name = 'vighnahar_agro.payment'
     _description = 'Payment'
+    _order = "id desc"
 
     name = fields.Char(string="Reference", default='New')
     customer_invoice_id = fields.Many2one('vighnahar_agro.customer_invoice', string='Customer Invoice', required=True)

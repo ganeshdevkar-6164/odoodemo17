@@ -1,6 +1,4 @@
 <odoo>
-    
-
     <record id="view_customer_invoice_form" model="ir.ui.view">
         <field name="name">customer_invoice.form</field>
         <field name="model">vighnahar_agro.customer_invoice</field>
@@ -12,11 +10,12 @@
                 
                     <button name="%(action_report_customer_invoice)d" string="Print" type="action" class="btn-primary"
                                     invisible="state != 'invoice' and state != 'downpayment'"/>
-            
-            
+
                     <button name="action_payment" type="object" string="Payment" 
                                 invisible="state != 'invoice' and state != 'downpayment'" class="oe_highlight"/>
+
                     <button name="action_cancel" type="object" string="Cancel" class="btn-danger"/>
+
                     <field name="state" widget="statusbar" statusbar_visible="draft,invoice"/>
                 </header>
                 <sheet>
@@ -25,11 +24,9 @@
                             bg_color="text-bg-success" />
                     <group>
                         <group>
-                            <field name="name"/>
-                            
+                            <field name="name"/>                           
                             <field name="party_id"/>
                             <field name="invoice_type"/>
-
                         </group>
                         <group>
                             <field name="date"/>
@@ -54,9 +51,7 @@
                                     <field name="total" string="Total Price" readonly="1"/>
                                     <field name="uom_category_id" string="UOM Category" optional="hide"/>
                                     <field name="available_product_category_ids" optional="hide"/>
-                                    <field name="is_available" optional="hide"/>
-                                    
-                                    
+                                    <field name="is_available" optional="hide"/>   
                                 </tree>
                             </field>
                         </page>
@@ -82,7 +77,11 @@
                 <field name="invoice_type" string="Invoice Type"/>
                 <field name="warehouse_id"/>
                 <field name="total_amount" string="Total Amount"/>
-                <field name="state" string="state"/>
+                <field name="state" string="state" widget="badge" decoration-success="state == 'paid'"
+                                                                  decoration-info="state == 'draft'"
+                                                                  decoration-warning="state == 'in_payment'"
+                                                                  decoration-primary="state == 'downpayment'"
+                                                                  decoration-danger="state == 'invoice'"/>
             </tree>
         </field>
     </record>
@@ -95,12 +94,6 @@
     </record>
 
     <menuitem id="menu_customer_invoice" name="Customer Invoices" parent="menu_customer" action="action_customer_invoice"/>
-
-
-
-
-
-
 
 
     <record id="view_payment_form" model="ir.ui.view">
@@ -119,14 +112,12 @@
                             <field name="name"/>
                             <field name="customer_invoice_id"/>
                             <field name = "party_id"/>
-                            <field name="warehouse_id"/>
-                            
-                            
+                               
                         </group>
                         <group>
+                            <field name="warehouse_id"/>
                             <field name="date"/>
                             <field name="invoice_type"/>
-                            <field name="amount"/>
                             
                         </group>
                     </group>
@@ -147,6 +138,9 @@
                             </field>
                         </page>
                     </notebook>
+                    <div style="text-align: right; padding-top: 20px;">
+                        <div>Total: <strong><field name="amount"/></strong></div>
+                    </div>
                 </sheet>
             </form>
         </field>
@@ -163,8 +157,8 @@
                 <field name="warehouse_id"/>
                 <field name="date" string="Date"/>
                 <field name="amount" string="Amount"/>
-                
-                <field name="state" string="Status"/>
+                <field name="state" string = "Status" widget="badge" decoration-success="state == 'paid'"
+                                                                     decoration-info="state == 'draft'"/>
             </tree>
         </field>
     </record>
@@ -181,9 +175,6 @@
     <menuitem id="menu_payment" name="Payments" parent="menu_customer" action="action_payment"/>
 
 
-
-
-
      <!-- Downpayment Wizard -->
     <record id="view_downpayment_wizard_form" model="ir.ui.view">
         <field name="name">downpayment.wizard.form</field>
@@ -194,8 +185,7 @@
                     <field name="customer_invoice_id" invisible="1"/>
                     <field name="invoice_type" readonly="1"/>
                     <field name="percentage" invisible = "invoice_type != 'percentage'"/>
-                    <field name="fixed_amount" invisible = "invoice_type != 'fixed_amount'"/>
-                    
+                    <field name="fixed_amount" invisible = "invoice_type != 'fixed_amount'"/> 
                 </group>
                 <footer>
                     <button string="Payment" type="object" name="action_create_payment" class="oe_highlight"/>

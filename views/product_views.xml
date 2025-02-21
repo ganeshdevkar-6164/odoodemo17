@@ -97,11 +97,9 @@
                             </page>
                             <page string="Inventory">
                                 <group>
-                                    <group string = "Operations">
-                                        
+                                    <group string = "Operations">   
                                         <field name="route_buy"/>
-                                        <field name="route_dropship"/>
-                                            
+                                        <field name="route_dropship"/>       
                                     </group>
                                     <group string = "Logistics">
                                         <group>
@@ -114,10 +112,7 @@
                                         </group>
                                     </group>
                                     <group string = "Traceability">
-                                        
-                                        <field name="tracking" widget="radio"/>
-                                        
-                                            
+                                        <field name="tracking" widget="radio"/>                                           
                                     </group>
                                 </group>
                             </page>
@@ -130,12 +125,11 @@
                                         <field name="min_qty" string = "Minimal Quantity" optional = "hide"/>
                                         <field name="delay" string = "Delivery Lead Time"/>
                                         <field name="company_id" optional = "hide"/>
-
                                     </tree>
                                 </field>
                             </page>
                             <page string="Sales" invisible="can_be_sold == False">
-                                <field name="supplier_info_ids" widget="one2many_list">
+                                <field name="customer_info_ids" widget="one2many_list">
                                     <tree editable="bottom">
                                         <field name="party_id"/>
                                         <field name="price"/>
@@ -143,7 +137,6 @@
                                         <field name="min_qty" optional = "hide"/>
                                         <field name="delay" />
                                         <field name="company_id" optional = "hide"/>
-
                                     </tree>
                                 </field>
                             </page>
@@ -192,8 +185,6 @@
                                             </span> -->
                                         </div>
                                     </div>
-                                    
-
                                     <ul>
                                         <li t-if="record.description.raw_value" class="o_text_overflow">
                                             <i class="fa me-2 fa-info-circle text-primary" title="Description"/>
@@ -202,8 +193,7 @@
                                         <li t-if="record.product_category_id.raw_value" class="o_force_ltr">
                                             <i class="fas me-2 fa-seedling" title="Product Category"/>
                                             <field name="product_category_id"/>
-                                        </li>
-                                        
+                                        </li>                                       
                                         <li t-if="record.sales_price.raw_value" class="o_force_ltr">
                                             <i class="fa fa-fw fa-inr text-primary" title="Sales Price"/>
                                             <field name="sales_price"/> INR
@@ -220,7 +210,6 @@
                                             <i class="me-2 fa-cubes" title="On Hand Quantity"/>
                                             <field name="quantity"/> kg
                                         </li>
-                                    
                                     </ul>
                                 </div>
                             </div>
@@ -256,5 +245,6 @@
         </record>
 
         <menuitem id="menu_product" name="Products" parent="menu_vighnahar_agro" action="action_product_form" sequence="1"/>
+        
     </data>
 </odoo>
