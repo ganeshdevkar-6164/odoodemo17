@@ -31,7 +31,7 @@
                         bg_color="text-bg-info" />
                     <!-- Pending Payment Ribbon -->
                     <widget name="web_ribbon" title="Pending" 
-                        invisible="payment_status != 'pending'" 
+                        invisible="payment_status != 'pending' or state != 'post'" 
                         bg_color="text-bg-warning" />
                     <!-- </div> -->
                     <group>
@@ -69,7 +69,7 @@
                     </notebook>
                     <div style="text-align: right; padding-top: 20px;">
                         <div>Total: <strong><field name="total_amount"/></strong></div>
-                        <div invisible="amount_due == 0.0">Amount Due: <strong><field name="amount_due"/></strong></div>
+                        <div invisible="amount_due == 0.0 or state != 'post'">Amount Due: <strong><field name="amount_due"/></strong></div>
                        <div invisible="paid_amount == 0.0">Paid Amount: <strong><field name="paid_amount"/></strong></div>
                     </div>
                 </sheet>
