@@ -23,6 +23,7 @@ class CustomerInvoice(models.Model):
     warehouse_id = fields.Many2one('vighnahar_agro.warehouse', string = "Warehouse", required=True)
     payment_id = fields.Many2one('vighnahar_agro.payment', string='Payment')
     payment_notification_date = fields.Datetime(string='Payment Notification Date')
+    message_sent = fields.Boolean(string='Payment Reminder Sent', default=False)
     downpayment = fields.Float(string='Downpayment Amount', default=0.0,  readonly=True)
     remaining_amount = fields.Float(string='Remaining Amount', compute='_compute_remaining_amount', store=True)
     customer_invoice_line_ids = fields.One2many('vighnahar_agro.customer_invoice_line', 'customer_invoice_id', string='Invoice Lines', required=True)
@@ -113,7 +114,77 @@ class CustomerInvoice(models.Model):
                         ))
                 else:
                     raise UserError(_("Product: %s not found in warehouse: %s" % (line.product_id.name, rec.warehouse_id.name)))
+                
+    #send whatsapp message using ultramsg api and payment_notification_date           
+    def send_whatsapp_message(self, phone_number, message):
+        """ Function to send WhatsApp message using UltraMsg API """
+        instance_id = 'instance106882'  # Replace with your instance ID
+        token = 'vqi4mooaiyd5ay5b'  # Replace with your API token
+        url = f"https://api.ultramsg.com/{instance_id}/messages/chat"
+       
+        payload = {
+            "token": token,
+            "to": phone_number.strip(),
+            "body": message
+        }
+
+        response = requests.post(url, data=payload)
+ 
+        if response.status_code == 200:
+            _logger.info(f"WhatsApp message successfully sent to {phone_number}")
+        else:
+            _logger.error(f"Failed to send WhatsApp message to {phone_number}. Response: {response.text}")
+
+    @api.model
+    def send_payment_reminder(self):
+        """Scheduled action to send payment reminders."""
+        # Get invoices that are in the 'invoice' state and have a set payment_notification_date
+        invoices = self.env['vighnahar_agro.customer_invoice'].search([
+            ('state', 'in', ['invoice', 'downpayment']),  # Handle both 'invoice' and 'downpayment' states
+            ('payment_notification_date', '!=', False),
+            ('message_sent', '=', False),  # Check if message has not been sent yet
+        ])
+
+        for invoice in invoices:
+            # Get current time in the same timezone as payment_notification_date
+            current_time = fields.Datetime.now()
+            payment_time = invoice.payment_notification_date
             
+            if payment_time and current_time >= payment_time:
+                # Send the reminder message if the invoice's payment notification date is due
+                if invoice.party_id.contact:
+                    party_name = invoice.party_id.name
+                    message = f"Dear {party_name}, your payment of {invoice.name} is pending. Please make your payment."
+                    self.send_whatsapp_message(invoice.party_id.contact, message)
+                    _logger.info(f"Payment reminder sent to {invoice.party_id.contact}")
+
+                    # Mark the message as sent for this invoice
+                    invoice.message_sent = True
+
+
+    @api.model
+    def create_cron_job(self):
+        """ Create the scheduled action (cron job) programmatically. """
+        cron_model = self.env['ir.cron']
+        existing_cron = cron_model.search([('name', '=', 'Send Payment Reminder Cron')])
+
+        if not existing_cron:
+            cron_model.create({
+                'name': 'Send Payment Reminder Cron',
+                'model_id': self.env.ref('vighnahar_agro.model_vighnahar_agro_customer_invoice').id,
+                'state': 'code',
+                'code': 'model.send_payment_reminder()',  # Method to call
+                'interval_type': 'minutes',  # You can set this to minutes, hours, days, etc.
+                'interval_number': 2,  # 1440 minutes = 1 day, adjust this based on your needs
+                'numbercall': -1,  # Infinite execution
+                'nextcall': fields.Datetime.now(),
+            })
+
+    @api.model
+    def init(self):
+        """ Initialize method to create the cron job when the module is installed """
+        super(CustomerInvoice, self).init()
+        self.create_cron_job()       
     
             
             

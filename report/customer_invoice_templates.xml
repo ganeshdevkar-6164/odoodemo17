@@ -1,85 +1,102 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
-    <template id="report_customer_invoice_template">
+    <template id="report_customer_invoice_template" name="Customer Invoice Template">
         <t t-call="web.html_container">
-            <t t-foreach="docs" t-as="o">
-                <!-- Page container -->
-                <div class="page">
-
-                    <!-- Header Section (Logo + Vighnahar Agro) -->
-                    <div class="header d-flex" style="border-bottom: 2px solid #000; padding-bottom: 10px;">
-                        <!-- Logo -->
-                        <div class="logo" style="flex-shrink: 0;">
-                            <img src="/vighnahar_agro/static/src/img/logo.png" alt="Logo" style="max-width: 150px; max-height: 200px;"/>
-                        </div>
-
-                        <!-- Company Name (Vighnahar Agro) -->
-                        <div class="company-name align-items-center text-center" style="flex-grow: 1; margin-left: 10em;">
-                            <h6 style="margin: 0;">Shree Vighnahar Prasanna</h6>
-                            <h1 style="margin: 20px 0; text-transform: uppercase; font-size: 40px;">Vighnahar Agro</h1>
-                            <!-- Company Details (Right-aligned) -->
-                            <div class="company-details">
-                                <h4 style="margin: 0;">Shree Vaibhav V. Kavde</h4>
-                                <p style="margin: 0;">Mobile: 9766512238, 8767200000</p>
-                                <p style="margin: 0;">At Port: Ozar, Tal - Junnar, Dist - Pune</p>
+            <head>
+                <meta charset="UTF-8"/>
+                <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+                <title>Invoice Report</title>
+                <style type="text/css">
+                    .page {
+                        border: 1px solid #000;
+                        padding: 20px;
+                        margin: 20px;
+                        min-height: 150vh; /* Ensure full viewport height */
+                        font-size: 18px;
+                    }
+                    table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        text-align: center;
+                        font-size: 18px;
+                        margin: 0 auto;
+                    }
+                    th, td {
+                        border: 1px solid #ddd;
+                        padding: 8px;
+                    }
+                    th {
+                        background-color: #f4f4f4;
+                        font-weight: bold;
+                    }
+                </style>
+            </head>
+            <body style="font-size: 14px; color: #000; margin: 20px; padding: 0;">
+                <main>
+                    <t t-foreach="docs" t-as="doc">
+                        <div class="page">
+                            <!-- Header Section -->
+                            <div class="header-section" style="text-align: center; padding-bottom: 20px; 
+                                border-bottom: 1px solid #000; position: relative;">
+                                <img t-att-src="'http://localhost:8069/vighnahar_agro/static/src/img/logo.png'" 
+                                     alt="Logo" style="max-height: 100px; max-width: 150px; position: absolute; left: 0px;"/>
+                                <h3>श्री विघ्नहर प्रसन्न</h3>
+                                <h1>विघ्नहर ॲग्रो</h1>
+                                <div style="position: absolute; right:0px; bottom:25; font-size:16px;">
+                                    <h3>श्री वैभव व्ही. कवडे</h3>
+                                    <p >मोबाईल: ९७६६५१२२३८, ८७६७२०००००</p>
+                                    <p>पोस्ट: ओझर, ता - जुन्नर, जिल्हा - पुणे</p>
+                                </div>
                             </div>
-                        </div>
-                    </div>
-
-                    <!-- Invoice Details (Left-aligned, on same row) -->
-                    <div class="body" style="padding-top: 50px; font-size: 20px;">
-                        <div class="invoice-details" style="padding-bottom: 25px;  position: relative;">
-                            <div class="party-name">
-                                <p style="margin: 0;">Party Name: <strong><t t-esc="o.party_id.name"/></strong></p> <!-- Dynamically get Party Name -->
+                            
+                            <!-- Invoice Details Section -->
+                            <div class="invoice-details" style="padding: 20px 0; border-bottom: 1px solid #000;">
+                                <p>पार्टी नाव: <strong><t t-esc="doc.party_id.name"/></strong></p>
+                                <p>चालान क्रमांक: <strong><t t-esc="doc.name"/></strong></p>
+                                <p>तारीख: <strong><t t-esc="doc.date"/></strong></p>
                             </div>
-                            <div class="invoice-info" style="position: absolute; right: 0; bottom: 10;">
-                                <p style="margin: 0;">Invoice No: <strong><t t-esc="o.name"/></strong></p> <!-- Dynamically get Invoice Number -->
-                                <p style="margin: 0;">Date: <strong><t t-esc="o.date"/></strong></p> <!-- Dynamically get Date -->
-                            </div>
-                        </div>
-
-                        <!-- Products Table -->
-                        <div class="products" style="margin-bottom: 20px; border-top: 2px solid #000; border-bottom: 1px solid #000; padding-top: 10px; padding-bottom: 10px;">
-                            <table style="width: 100%; border-collapse: collapse; font-size: 20px">
-                                <thead>
-                                    <tr>
-                                        <th style="border-bottom: 1px solid #000; padding-bottom: 5px; text-align: left;">Product</th>
-                                        <th style="border-bottom: 1px solid #000; padding-bottom: 5px; text-align: left;">Quantity</th>
-                                        <th style="border-bottom: 1px solid #000; padding-bottom: 5px; text-align: left;">UOM</th>
-                                        <th style="border-bottom: 1px solid #000; padding-bottom: 5px; text-align: left;">Price</th>
-                                        <th style="border-bottom: 1px solid #000; padding-bottom: 5px; text-align: left;">Total</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Loop through the invoice lines and display product details -->
-                                    <t t-foreach="o.customer_invoice_line_ids" t-as="line">
+                            
+                            <!-- Product Table Section -->
+                            <div class="product-table" style="padding: 20px 0;">
+                                <table>
+                                    <thead>
                                         <tr>
-                                            <td><t t-esc="line.product_id.name"/></td> <!-- Dynamically get Product Name -->
-                                            <td><t t-esc="line.quantity"/></td> <!-- Dynamically get Quantity -->
-                                            <td><t t-esc="line.uom_id.name"/></td> <!-- Dynamically get UOM -->
-                                            <td><t t-esc="line.price"/></td> <!-- Dynamically get Price -->
-                                            <td><t t-esc="line.total"/></td> <!-- Dynamically get Total -->
+                                            <th>उत्पादन</th>
+                                            <th>प्रमाण</th>
+                                            <th>एकक</th>
+                                            <th>किंमत</th>
+                                            <th>एकूण</th>
                                         </tr>
-                                    </t>
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        <t t-foreach="doc.customer_invoice_line_ids" t-as="line">
+                                            <tr>
+                                                <td><t t-esc="line.product_id.name"/></td>
+                                                <td><t t-esc="line.quantity"/></td>
+                                                <td><t t-esc="line.uom_id.name"/></td>
+                                                <td><t t-esc="line.price"/></td>
+                                                <td><t t-esc="line.total"/></td>
+                                            </tr>
+                                        </t>
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <!-- Total Amount Section -->
+                            <div class="total-amount" style="text-align: right; margin-top: 20px; font-weight: bold;">
+                                <p><strong>एकूण रक्कम: <t t-esc="doc.total_amount"/></strong></p>
+                            </div>
+                            
+                            <!-- Footer Section -->
+                            <div class="footer-section" style="border-top: 1px solid #000; font-weight:bold;
+                                 margin-top:100px; width: 100%;">
+                                <p style="text-align: left;">धन्यवाद!</p>
+                                <p style="text-align: right;">स्वाक्षरी</p>
+                            </div>
                         </div>
-
-                        <!-- Total Amount -->
-                        <div class="total-amount" style="text-align: right; margin-bottom: 20px;">
-                            <p style="margin: 0; font-size: 20px; font-weight: bold;">Total Amount: <t t-esc="o.total_amount"/></p> <!-- Dynamically get Total Amount -->
-                        </div>
-                    </div>
-
-                    <!-- Footer Section -->
-                    <div style="position: absolute; font-size: 20px; bottom: 20px; width: 100%; padding-top: 30px; border-top: 2px solid #000;">
-                        <p style="margin: 0; text-align:center">Thank You</p>
-                        <p style="text-align:right; margin: 10px 50px 0 0;">Signature</p>
-                    </div>
-
-                </div>
-            </t>
+                    </t>
+                </main>
+            </body>
         </t>
     </template>
-
 </odoo>
