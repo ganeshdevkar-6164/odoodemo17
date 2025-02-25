@@ -37,14 +37,14 @@
                     <group>
                         <group>
                             <field name="name"/>                            
-                            <field name="description"/>
                             <field name="party_id"/>                                            
-                            <field name="warehouse_id"/>
-                            
+                            <field name="description"/>
                         </group>                                                                                                                                                                                                         
                         <group>                                     
-                            <field name="date"/>                        
-                            <field name="total_amount" readonly="1"/>           
+                            <field name="date"/>  
+                            <field name="warehouse_id"/>                      
+                            <!-- <field name="total_amount" readonly="1"/> -->
+                            <!-- <field name="total_tax_amount" readonly="1"/>            -->
                             <field name="payment_status" invisible="1"/>
                             
                         </group>
@@ -60,18 +60,26 @@
                                     <field name="converted_quantity" string="Converted Quantity" optional="hide"/>
                                     <field name="converted_uom_id" string="Converted UOM" optional="hide"/>
                                     <field name="price" string="Unit Price"/>
-                                    <field name="total" string="Total Price" readonly="1"/>
+                                    <field name="tax_ids" widget="many2many_tags" options="{'no_create': True}"/>
+                                    <field name="tax_excluded_amount" readonly="1" string="Tax excluded"/>
+                                    <field name="tax_amount" optional="hide"/>
+                                    <field name="tax_included_amount" optional="hide" string="Tax Included"/>
+                                    <!-- <field name="total" string="Total Price" readonly="1"/> -->
                                     <field name="uom_category_id" string="UOM Category" optional="hide"/>
                                     <field name="available_product_category_ids" optional="hide"/>
                                 </tree>
                             </field>
                         </page>
                     </notebook>
-                    <div style="text-align: right; padding-top: 20px;">
-                        <div>Total: <strong><field name="total_amount"/></strong></div>
+                    <div style="text-align: right; padding-top: 5px;">
+                        <div invisible="not has_tax_lines">Untaxed Amount: <strong><field name="total_amount_tax_excluded"/></strong></div>
+                        <div invisible="not has_tax_lines">Tax Amount: <strong><field name="tax_amount"/></strong></div>
+                        <div>Total: <strong><field name="total_amount_tax_included"/></strong></div>
                         <div invisible="amount_due == 0.0 or state != 'post'">Amount Due: <strong><field name="amount_due"/></strong></div>
-                       <div invisible="paid_amount == 0.0">Paid Amount: <strong><field name="paid_amount"/></strong></div>
+                        <div invisible="paid_amount == 0.0">Paid Amount: <strong><field name="paid_amount"/></strong></div>
                     </div>
+                    <!-- Include the computed field but make it invisible -->
+                    <field name="has_tax_lines" invisible="1"/>
                 </sheet>
             </form>
         </field>
@@ -87,7 +95,8 @@
                 <field name="party_id" string="Party/Supplier"/>
                 <field name="date" string="Date"/>
                 <field name="warehouse_id"/>
-                <field name="total_amount" string="Total Amount"/>
+                <!-- <field name="total_tax_amount" readonly="1"/> -->
+                <!-- <field name="total_amount" string="Total Amount"/> -->
                 <field name="state"/>
                 <field name="payment_status" string="Payment Status" widget="badge" decoration-success="payment_status == 'paid'"
                  decoration-info="payment_status == 'partial'" decoration-warning="payment_status == 'pending'"/>

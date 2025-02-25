@@ -10,7 +10,10 @@ class SupplierInvoice(models.Model):
     description = fields.Text(string="Description")
     party_id = fields.Many2one('vighnahar_agro.party', string="Party/Supplier", required=True, domain=[('is_supplier', '=', True)])
     date = fields.Date(string="Date", default=fields.Date.today)
+    total_amount_tax_excluded = fields.Float(string="Total Amount (Excluding Tax)", compute='_compute_total_amount_tax_excluded', store=True)
+    tax_amount = fields.Float(string="Tax Amount", compute='_compute_tax_amount', store=True)
     total_amount = fields.Float(string='Total Amount', compute='_compute_total_amount', store=True)
+    total_amount_tax_included = fields.Float(string="Total Amount (Including Tax)", compute='_compute_total_amount_tax_included', store=True)    
     warehouse_id = fields.Many2one('vighnahar_agro.warehouse', string = "Warehouse", required=True)
     amount_due = fields.Float(string="Amount Due", compute='_compute_amount_due', store=True)
     paid_amount = fields.Float(string="Paid Amount", compute='_compute_total_paid', store=True)
@@ -29,8 +32,41 @@ class SupplierInvoice(models.Model):
         ('paid', 'Paid'),
     ], compute='_compute_payment_status', string='Payment Status', default='pending', store=True)
     
+    has_tax_lines = fields.Boolean(compute='_compute_has_tax_lines', string="Has Tax Lines", store=True)
+        
+    # Generate unique sequence number    
+    @api.model
+    def create(self, vals):
+        if vals.get('name', 'New') == 'New':
+            vals['name'] = self.env['ir.sequence'].next_by_code('vighnahar_agro.supplier_invoice') or 'New'
+        return super(SupplierInvoice, self).create(vals)
     
+    @api.depends('supplier_invoice_line_ids.tax_ids')
+    def _compute_has_tax_lines(self):
+        for invoice in self:
+            invoice.has_tax_lines = any(line.tax_ids for line in invoice.supplier_invoice_line_ids)
     
+    # Calculate the total amount from invoice lines
+    @api.depends('supplier_invoice_line_ids.tax_included_amount')
+    def _compute_total_amount(self):
+        for record in self:
+            record.total_amount = sum(line.tax_included_amount for line in record.supplier_invoice_line_ids)
+    
+    @api.depends('supplier_invoice_line_ids.tax_amount')
+    def _compute_tax_amount(self):
+        for invoice in self:
+            invoice.tax_amount = sum(line.tax_amount for line in invoice.supplier_invoice_line_ids)
+    
+    @api.depends('supplier_invoice_line_ids.tax_excluded_amount')
+    def _compute_total_amount_tax_excluded(self):
+        for record in self:
+            record.total_amount_tax_excluded = sum(line.tax_excluded_amount for line in record.supplier_invoice_line_ids)
+
+    @api.depends('supplier_invoice_line_ids.tax_included_amount')
+    def _compute_total_amount_tax_included(self):
+        for record in self:
+            record.total_amount_tax_included = sum(line.tax_included_amount for line in record.supplier_invoice_line_ids)
+
     @api.depends('total_amount', 'paid_amount')
     def _compute_amount_due(self):
         for record in self:
@@ -49,20 +85,6 @@ class SupplierInvoice(models.Model):
             else:
                 record.payment_status = 'pending'
 
-    # Generate unique sequence number    
-    @api.model
-    def create(self, vals):
-        if vals.get('name', 'New') == 'New':
-            vals['name'] = self.env['ir.sequence'].next_by_code('vighnahar_agro.supplier_invoice') or 'New'
-        return super(SupplierInvoice, self).create(vals)
-
-    # Calculate the total amount from invoice lines
-    @api.depends('supplier_invoice_line_ids.total')
-    def _compute_total_amount(self):
-        for record in self:
-            record.total_amount = sum(line.total for line in record.supplier_invoice_line_ids)
-
-    # Calculate total paid amount from related payments
     @api.depends('payment_ids.amount', 'payment_ids.state')
     def _compute_total_paid(self):
         for record in self:
@@ -151,10 +173,35 @@ class SupplierInvoiceLine(models.Model):
     quantity = fields.Float(string='Quantity', digits=(16, 4))
     uom_id = fields.Many2one('vighnahar_agro.uom', string='UOM', domain="[('category_id', '=', uom_category_id)]")
     price = fields.Float(string='Unit Price', store=True, required = True)
-    total = fields.Float(string='Total Price', compute='_compute_total', store=True)
+    
     converted_quantity = fields.Float(string='Converted Quantity', digits=(16, 4), compute='_compute_converted_quantity', store=True)
     converted_uom_id = fields.Many2one('vighnahar_agro.uom', string='Converted UOM', compute='_compute_converted_quantity', store=True)
     available_product_category_ids = fields.Many2many('vighnahar_agro.product_category', compute='_compute_available_product_categories')
+    
+    # Field to select taxes
+    tax_ids = fields.Many2many('vighnahar_agro.account_tax', string="Taxes", domain=[('active', '=', True)],
+                               relation='vighnahar_agro_supplier_invoice_line_account_tax_rel')
+    tax_excluded_amount = fields.Float(string='Tax Excluded Amount', compute='_compute_tax_excluded_amount', store=True)
+    tax_amount = fields.Float(string='Tax Amount', compute='_compute_tax_amount', store=True)
+    tax_included_amount = fields.Float(string='Tax Included Amount', compute='_compute_tax_included_amount', store=True)
+    
+    @api.depends('converted_quantity', 'price')
+    def _compute_tax_excluded_amount(self):
+        for line in self:
+            line.tax_excluded_amount = line.converted_quantity * line.price
+
+    @api.depends('tax_ids', 'tax_excluded_amount')
+    def _compute_tax_amount(self):
+        for line in self:
+            total_tax = 0.0
+            for tax in line.tax_ids:
+                total_tax += (tax.amount / 100) * line.tax_excluded_amount
+            line.tax_amount = total_tax
+
+    @api.depends('tax_excluded_amount', 'tax_amount')
+    def _compute_tax_included_amount(self):
+        for line in self:
+            line.tax_included_amount = line.tax_excluded_amount + line.tax_amount
 
     @api.depends('quantity', 'uom_id', 'uom_category_id')
     def _compute_converted_quantity(self):
@@ -171,7 +218,13 @@ class SupplierInvoiceLine(models.Model):
                 line.converted_quantity = line.quantity
                 line.converted_uom_id = False
 
-    #instead of related field to display product cost price we use onchange
+    @api.depends('product_id')
+    def _compute_available_product_categories(self):
+        for line in self:
+            product_ids = self.env['vighnahar_agro.product'].search([('can_be_purchased', '=', True)])
+            category_ids = product_ids.mapped('product_category_id')
+            line.available_product_category_ids = category_ids
+
     @api.onchange('product_id', 'invoice_id.party_id')
     def _onchange_product_id(self):
         """Set the price and UOM from supplier info if available; otherwise, use product cost price and default UOM."""
@@ -187,20 +240,6 @@ class SupplierInvoiceLine(models.Model):
             else:
                 self.price = self.product_id.cost_price  # Use product's cost price
                 self.uom_id = self.product_id.uom_id  # Use product's default UOM
-
-
-    
-    @api.depends('converted_quantity', 'price')
-    def _compute_total(self):
-        for line in self:
-            line.total = line.converted_quantity * line.price
-
-    @api.depends('product_id')
-    def _compute_available_product_categories(self):
-        for line in self:
-            product_ids = self.env['vighnahar_agro.product'].search([('can_be_purchased', '=', True)])
-            category_ids = product_ids.mapped('product_category_id')
-            line.available_product_category_ids = category_ids
 
 
 class SupplierPayment(models.Model):

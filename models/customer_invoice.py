@@ -83,6 +83,40 @@ class CustomerInvoice(models.Model):
             
             self._update_physical_inventory_stock()
             
+            self._send_invoice_email(rec)  # Send email after invoice creation
+
+    def _send_invoice_email(self, rec):
+        """Send the invoice email to the customer."""
+        if rec.party_id.email:
+            # Dynamically creating the email content
+            subject = f"Invoice {rec.name} for your order"
+            body = f"""
+            <p>Dear {rec.party_id.name},</p>
+            <p>We are pleased to inform you that your invoice for {rec.name} is ready.</p>
+            <p><strong>Invoice Date:</strong> {rec.date}</p>
+            <p><strong>Total Amount:</strong> {rec.total_amount}</p>
+            <p>Please make the payment at your earliest convenience.</p>
+            <p>Thank you,</p>
+            <p>Vighnahar Agro</p>
+            """
+            
+            # Prepare the email
+            mail_values = {
+                'subject': subject,
+                'body_html': body,
+                'email_from': self.env.user.email or 'info@yourcompany.com',  # Sender email
+                'email_to': rec.party_id.email,  # Recipient email
+                # 'partner_ids': [(4, rec.party_id.id)],  # Add partner (customer) as recipient
+            }
+            
+            # Send the email
+            mail = self.env['mail.mail'].create(mail_values)
+            mail.send()
+
+            _logger.info(f"Invoice email sent to {rec.party_id.email} for Invoice: {rec.name}")
+        else:
+            _logger.warning(f"Customer does not have a contact email set for Invoice: {rec.name}")
+            
             
             
     def _update_physical_inventory_stock(self):

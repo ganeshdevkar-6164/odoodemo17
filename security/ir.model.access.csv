@@ -35,3 +35,4 @@ access_vighnahar_agro_journal,vighnahar_agro.journal,model_vighnahar_agro_journa
 
 access_vighnahar_agro_journal_entry,vighnahar_agro.journal_entry,model_vighnahar_agro_journal_entry,,1,1,1,1
 access_vighnahar_agro_journal_item,vighnahar_agro.journal_item,model_vighnahar_agro_journal_item,,1,1,1,1
+access_vighnahar_agro_account_tax,vighnahar_agro_account_tax,model_vighnahar_agro_account_tax,,1,1,1,1

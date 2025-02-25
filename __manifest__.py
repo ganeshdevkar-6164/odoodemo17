@@ -16,6 +16,7 @@
         'views/inventory_stock_location_views.xml',
         'views/bank_views.xml',
         'views/accounts_views.xml', 
+        'views/taxes_views.xml', 
         'report/customer_invoice_templates.xml',
         'report/report.xml',
         
