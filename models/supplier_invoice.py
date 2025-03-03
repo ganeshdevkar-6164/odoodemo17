@@ -8,8 +8,19 @@ class SupplierInvoice(models.Model):
     
     name = fields.Char(string="Reference", required=True, copy=False, readonly=True, index=True, default='New')
     description = fields.Text(string="Description")
-    party_id = fields.Many2one('vighnahar_agro.party', string="Party/Supplier", required=True, domain=[('is_supplier', '=', True)])
-    date = fields.Date(string="Date", default=fields.Date.today)
+    
+    # Add is_labor checkbox field
+    is_labor = fields.Boolean(string="Is Labor", default=False)
+    
+    # Update the party_id field to filter only 'labor' parties if is_labor is True
+    party_id = fields.Many2one(
+        'vighnahar_agro.party', 
+        string="Party/Supplier", 
+        required=True, 
+        domain="[('is_supplier', '=', True), ('party_type', '!=', 'labor')]" if not is_labor else "[('is_supplier', '=', True), ('party_type', '=', 'labor')]"
+    )
+    
+    date = fields.Datetime(string="Date", default=fields.Datetime.now)
     total_amount_tax_excluded = fields.Float(string="Total Amount (Excluding Tax)", compute='_compute_total_amount_tax_excluded', store=True)
     tax_amount = fields.Float(string="Tax Amount", compute='_compute_tax_amount', store=True)
     total_amount = fields.Float(string='Total Amount', compute='_compute_total_amount', store=True)
@@ -33,13 +44,40 @@ class SupplierInvoice(models.Model):
     ], compute='_compute_payment_status', string='Payment Status', default='pending', store=True)
     
     has_tax_lines = fields.Boolean(compute='_compute_has_tax_lines', string="Has Tax Lines", store=True)
-        
+    
+    journal_id = fields.Many2one('vighnahar_agro.journal', string='Journal', required=True, domain=[('type', '=', 'purchase')])
+    journal_item_ids = fields.One2many('vighnahar_agro.journal_item', 'supplier_invoice_id', string="Journal Items")
+
     # Generate unique sequence number    
     @api.model
     def create(self, vals):
         if vals.get('name', 'New') == 'New':
             vals['name'] = self.env['ir.sequence'].next_by_code('vighnahar_agro.supplier_invoice') or 'New'
         return super(SupplierInvoice, self).create(vals)
+    
+    @api.model
+    def create(self, vals):
+        if vals.get('is_labor', False):
+            vals['warehouse_id'] = False  # Automatically unset warehouse_id if is_labor is True
+        return super(SupplierInvoice, self).create(vals)
+
+    def write(self, vals):
+        if vals.get('is_labor', False):
+            vals['warehouse_id'] = False  # Automatically unset warehouse_id if is_labor is True
+        return super(SupplierInvoice, self).write(vals)
+    
+    # onchange method to change the domain of party_id based on the value of is_labor
+    # @api.onchange('is_labor')
+    # def _onchange_is_labor(self):
+    #     # Change the domain of party_id based on the value of is_labor
+    #     if self.is_labor:
+    #         self.party_id = False  # Reset the party_id when is_labor is checked
+    #     return {
+    #         'domain': {
+    #             'party_id': [('is_supplier', '=', True), ('party_type', '=', 'labor')] if self.is_labor else [('is_supplier', '=', True), ('party_type', '!=', 'labor')],
+    #             'warehouse_id': [('is_labor', '=', False)],  # Hide warehouse when is_labor is checked
+    #         }
+    #     }
     
     @api.depends('supplier_invoice_line_ids.tax_ids')
     def _compute_has_tax_lines(self):
@@ -158,9 +196,95 @@ class SupplierInvoice(models.Model):
                     'min_qty': 1,
                 })
         
+        # Create Journal Entry based on the invoice details
+        self._create_journal_entry()
         
         self.state = 'post'
+
+
+    def _create_journal_entry(self):
+        # Create a new journal entry
+        journal_entry = self.env['vighnahar_agro.journal_entry'].create({
+            'name': self.name,
+            'date': self.date,
+            'journal_id': self.journal_id.id,
+            'state': 'draft',
+            'party_id': self.party_id.id,  # Adding party_id to the journal entry
+            'total_amount': self.total_amount,  # Adding total_amount to the journal entry
+        })
+
+        # Get the necessary accounts
+        expense_account = self.env['vighnahar_agro.account'].search([('account_type', '=', 'expense')], limit=1)
+        liability_account = self.env['vighnahar_agro.account'].search([('account_type', '=', 'liability')], limit=1)
+        tax_account = self.env['vighnahar_agro.account'].search([('account_type', '=', 'tax')], limit=1)
+
+        # Raise an error if any necessary account is missing
+        if not expense_account:
+            raise ValidationError("Expense account is missing. Please configure it in the chart of accounts.")
+        if not liability_account:
+            raise ValidationError("Liability account is missing. Please configure it in the chart of accounts.")
+        if not tax_account:
+            raise ValidationError("Tax account is missing. Please configure it in the chart of accounts.")
         
+        # Initialize lists for journal items
+        journal_items = []
+        total_debit = 0.0
+        total_credit = 0.0
+
+        # Loop through invoice lines and create journal items
+        for line in self.supplier_invoice_line_ids:
+            # Get tax-related data if applicable
+            tax_id = line.tax_ids[:1] if line.tax_ids else None  # Take the first tax if available
+            tax_amount = line.tax_amount if tax_id else 0.0  # Calculate tax amount if available
+
+            # Expense Debit (purchase of goods or services)
+            journal_items.append((0, 0, {
+                'entry_id': journal_entry.id,
+                'account_id': expense_account.id,
+                'party_id': self.party_id.id,
+                'debit': line.tax_excluded_amount,
+                'credit': 0.0,
+                'date': self.date,
+                'product_id': line.product_id.id if line.product_id else False,
+                'supplier_invoice_id': self.id,
+                'tax_id': tax_id.id if tax_id else False,
+            }))
+            total_debit += line.tax_excluded_amount
+
+            # Tax Debit (if applicable)
+            if tax_id:
+                journal_items.append((0, 0, {
+                    'entry_id': journal_entry.id,
+                    'account_id': tax_account.id,
+                    'party_id': self.party_id.id,
+                    'debit': tax_amount,
+                    'credit': 0.0,
+                    'date': self.date,
+                    'supplier_invoice_id': self.id,
+                    'tax_id': tax_id.id if tax_id else False,
+                }))
+                total_debit += tax_amount
+
+            # Liability Credit (Accounts Payable)
+            journal_items.append((0, 0, {
+                'entry_id': journal_entry.id,
+                'account_id': liability_account.id,
+                'party_id': self.party_id.id,
+                'debit': 0.0,
+                'credit': line.tax_included_amount,
+                'date': self.date,
+                'product_id': line.product_id.id if line.product_id else False,
+                'supplier_invoice_id': self.id,
+            }))
+            total_credit += line.tax_included_amount
+
+        # Validation to ensure Debit and Credit are equal
+        if round(total_debit, 2) != round(total_credit, 2):
+            raise ValidationError(f"Total debit ({total_debit}) and credit ({total_credit}) are not equal! Please check the invoice details.")
+
+        # Update journal entry with journal items and post the entry
+        self.write({'journal_item_ids': journal_items})
+        journal_entry.post_entry()
 
 class SupplierInvoiceLine(models.Model):
     _name = 'vighnahar_agro.supplier_invoice_line'

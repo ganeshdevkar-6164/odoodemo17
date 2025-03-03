@@ -21,7 +21,7 @@
                 <sheet>
                     <!-- Using Standard Odoo Ribbons -->
                     <!-- <div class="o_form_invisible_fields" style="position: absolute; right: 10px; top: 10px;"> -->
-                        <!-- Paid Ribbon -->
+                    <!-- Paid Ribbon -->
                     <widget name="web_ribbon" title="Paid" 
                         invisible="payment_status != 'paid'" 
                         bg_color="text-bg-success" />
@@ -37,12 +37,15 @@
                     <group>
                         <group>
                             <field name="name"/>                            
-                            <field name="party_id"/>                                            
+                            <field name="party_id" domain="[('is_supplier', '=', True), ('party_type', '!=', 'labor')]"/>
                             <field name="description"/>
+                            <field name="is_labor"/>
                         </group>                                                                                                                                                                                                         
                         <group>                                     
                             <field name="date"/>  
-                            <field name="warehouse_id"/>                      
+                            <!-- Warehouse visibility conditional on is_labor -->
+                            <field name="warehouse_id" required= "is_labor == False" invisible="is_labor == True"/>                            
+                            <field name="journal_id"/>                      
                             <!-- <field name="total_amount" readonly="1"/> -->
                             <!-- <field name="total_tax_amount" readonly="1"/>            -->
                             <field name="payment_status" invisible="1"/>
@@ -67,6 +70,18 @@
                                     <!-- <field name="total" string="Total Price" readonly="1"/> -->
                                     <field name="uom_category_id" string="UOM Category" optional="hide"/>
                                     <field name="available_product_category_ids" optional="hide"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Journal Items">
+                            <field name="journal_item_ids" widget="one2many_list">
+                                <tree editable="bottom">
+                                    <field name="account_id"/>
+                                    <field name="product_id" string="Label"/>
+                                    <!-- <field name="party_id"/> -->
+                                    <field name="debit"/>
+                                    <field name="credit"/>
+                                    <field name="tax_id"/>
                                 </tree>
                             </field>
                         </page>
@@ -95,12 +110,10 @@
                 <field name="party_id" string="Party/Supplier"/>
                 <field name="date" string="Date"/>
                 <field name="warehouse_id"/>
-                <!-- <field name="total_tax_amount" readonly="1"/> -->
-                <!-- <field name="total_amount" string="Total Amount"/> -->
                 <field name="state"/>
+                <field name="total_amount" string="Total Amount"/>
                 <field name="payment_status" string="Payment Status" widget="badge" decoration-success="payment_status == 'paid'"
                  decoration-info="payment_status == 'partial'" decoration-warning="payment_status == 'pending'"/>
-                
             </tree>
         </field>
     </record>

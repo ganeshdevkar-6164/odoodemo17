@@ -18,7 +18,7 @@ class Party(models.Model):
     party_type = fields.Selection([
         ('farmer','Farmer'),
         ('trader','Trader'),
-        ('labour','Labour')
+        ('labor','Labor')
         ], string='Party Type',required=True, default = 'farmer')
     
     # Personal Information
