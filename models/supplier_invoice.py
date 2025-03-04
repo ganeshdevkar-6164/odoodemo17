@@ -66,19 +66,7 @@ class SupplierInvoice(models.Model):
             vals['warehouse_id'] = False  # Automatically unset warehouse_id if is_labor is True
         return super(SupplierInvoice, self).write(vals)
     
-    # onchange method to change the domain of party_id based on the value of is_labor
-    # @api.onchange('is_labor')
-    # def _onchange_is_labor(self):
-    #     # Change the domain of party_id based on the value of is_labor
-    #     if self.is_labor:
-    #         self.party_id = False  # Reset the party_id when is_labor is checked
-    #     return {
-    #         'domain': {
-    #             'party_id': [('is_supplier', '=', True), ('party_type', '=', 'labor')] if self.is_labor else [('is_supplier', '=', True), ('party_type', '!=', 'labor')],
-    #             'warehouse_id': [('is_labor', '=', False)],  # Hide warehouse when is_labor is checked
-    #         }
-    #     }
-    
+       
     @api.depends('supplier_invoice_line_ids.tax_ids')
     def _compute_has_tax_lines(self):
         for invoice in self:

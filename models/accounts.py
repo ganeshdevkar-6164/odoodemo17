@@ -11,7 +11,8 @@ class Account(models.Model):
     account_type = fields.Selection([
         ('asset', 'Asset'),
         ('liability', 'Liability'),
-        ('income', 'Income'),
+        ('receivable', 'Receivable'),
+        ('revenue', 'Revenue'),
         ('equity', 'Equity'),
         ('expense', 'Expense'),
         ('tax', 'Tax'),
@@ -59,6 +60,7 @@ class JournalItem(models.Model):
     date = fields.Date(string='Date', required=True)
     product_id = fields.Many2one('vighnahar_agro.product', string='Product')
     supplier_invoice_id = fields.Many2one('vighnahar_agro.supplier_invoice', string='Supplier Invoice')
+    customer_invoice_id = fields.Many2one('vighnahar_agro.customer_invoice', string='Supplier Invoice')
     tax_id = fields.Many2one('vighnahar_agro.account_tax', string='Tax')
 
     @api.constrains('debit', 'credit')
@@ -87,6 +89,7 @@ class JournalEntry(models.Model):
     total_amount = fields.Float(string='Total Amount')
     
     supplier_invoice_id = fields.Many2one("vighnahar_agro.supplier_invoice", string="Supplier Invoice")
+    customer_invoice_id = fields.Many2one("vighnahar_agro.customer_invoice", string="Customer Invoice")
     
     def action_open_related_invoice(self):
         """ Open the related Supplier Invoice if found by matching name """
@@ -102,7 +105,23 @@ class JournalEntry(models.Model):
                 'res_id': supplier_invoice.id,
                 'target': 'current',
             }
+            
+        customer_invoice = self.env['vighnahar_agro.customer_invoice'].search([('name', '=', self.name)], limit=1)
+        
+        if customer_invoice:
+            return {
+                'type': 'ir.actions.act_window',
+                'name': 'Customer Invoice',
+                'res_model': 'vighnahar_agro.customer_invoice',
+                'view_mode': 'form',
+                'res_id': customer_invoice.id,
+                'target': 'current',
+            }
+        
+        
         return {'type': 'ir.actions.act_window_close'}  # Close if not found
+        
+        
     
     # To calculate the total debit and credit of the journal entry
     @api.depends('journal_item_ids.debit', 'journal_item_ids.credit')

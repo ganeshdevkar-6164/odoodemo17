@@ -18,7 +18,7 @@ class CustomerInvoice(models.Model):
     date = fields.Datetime(string="Invoice Date", default=fields.Datetime.now)
     
     invoice_type = fields.Selection([('regular', 'Regular Invoice'), ('percentage', 'Downpayment(Percentage)'), ('fixed_amount', 'Downpayment(Fixed Amount)')], string='Invoice Type', default='regular')
-    total_amount = fields.Float(string='Total Amount', compute='_compute_total_amount', store=True)
+    # total_amount = fields.Float(string='Total Amount', compute='_compute_total_amount', store=True)
     state = fields.Selection([('draft', 'Draft'), ('invoice', 'Invoice'), ('cancel', 'Cancel'), ('payment', 'In Payment'),('downpayment','Downpayment'),('paid','Paid')], string='Status', default='draft', required=True)
     warehouse_id = fields.Many2one('vighnahar_agro.warehouse', string = "Warehouse", required=True)
     payment_id = fields.Many2one('vighnahar_agro.payment', string='Payment')
@@ -28,7 +28,14 @@ class CustomerInvoice(models.Model):
     remaining_amount = fields.Float(string='Remaining Amount', compute='_compute_remaining_amount', store=True)
     customer_invoice_line_ids = fields.One2many('vighnahar_agro.customer_invoice_line', 'customer_invoice_id', string='Invoice Lines', required=True)
     
-    
+    total_amount_tax_excluded = fields.Float(string="Total Amount (Excluding Tax)", compute='_compute_total_amount_tax_excluded', store=True)
+    tax_amount = fields.Float(string="Tax Amount", compute='_compute_tax_amount', store=True)
+    total_amount = fields.Float(string='Total Amount', compute='_compute_total_amount', store=True)
+    total_amount_tax_included = fields.Float(string="Total Amount (Including Tax)", compute='_compute_total_amount_tax_included', store=True)    
+    journal_id = fields.Many2one('vighnahar_agro.journal', string='Journal', required=True, domain=[('type', '=', 'sale')])
+    journal_item_ids = fields.One2many('vighnahar_agro.journal_item', 'customer_invoice_id', string="Journal Items")
+    has_tax_lines = fields.Boolean(compute='_compute_has_tax_lines', string="Has Tax Lines", store=True)
+
     
     @api.depends('total_amount', 'downpayment')
     def _compute_remaining_amount(self):
@@ -42,10 +49,31 @@ class CustomerInvoice(models.Model):
                 vals['name'] = self.env['ir.sequence'].next_by_code('vighnahar_agro.customer_invoice')
         return super().create(vals_list)
 
-    @api.depends('customer_invoice_line_ids.total')
+    @api.depends('customer_invoice_line_ids.tax_ids')
+    def _compute_has_tax_lines(self):
+        for invoice in self:
+            invoice.has_tax_lines = any(line.tax_ids for line in invoice.customer_invoice_line_ids)
+    
+    # Calculate the total amount from invoice lines
+    @api.depends('customer_invoice_line_ids.tax_included_amount')
     def _compute_total_amount(self):
         for record in self:
-            record.total_amount = sum(line.total for line in record.customer_invoice_line_ids)
+            record.total_amount = sum(line.tax_included_amount for line in record.customer_invoice_line_ids)
+    
+    @api.depends('customer_invoice_line_ids.tax_amount')
+    def _compute_tax_amount(self):
+        for invoice in self:
+            invoice.tax_amount = sum(line.tax_amount for line in invoice.customer_invoice_line_ids)
+    
+    @api.depends('customer_invoice_line_ids.tax_excluded_amount')
+    def _compute_total_amount_tax_excluded(self):
+        for record in self:
+            record.total_amount_tax_excluded = sum(line.tax_excluded_amount for line in record.customer_invoice_line_ids)
+
+    @api.depends('customer_invoice_line_ids.tax_included_amount')
+    def _compute_total_amount_tax_included(self):
+        for record in self:
+            record.total_amount_tax_included = sum(line.tax_included_amount for line in record.customer_invoice_line_ids)
 
     def action_create(self):
         for rec in self:
@@ -81,9 +109,96 @@ class CustomerInvoice(models.Model):
             else:
                 rec.state = 'draft'
             
+            self._create_journal_entry()  # Create a journal entry for the invoice
+            
             self._update_physical_inventory_stock()
             
             self._send_invoice_email(rec)  # Send email after invoice creation
+    
+    def _create_journal_entry(self):
+        # Create a new journal entry
+        journal_entry = self.env['vighnahar_agro.journal_entry'].create({
+            'name': self.name,
+            'date': self.date,
+            'journal_id': self.journal_id.id,
+            'state': 'draft',
+            'party_id': self.party_id.id,  # Adding party_id to the journal entry (customer)
+            'total_amount': self.total_amount,  # Adding total_amount to the journal entry
+        })
+
+        # Get the necessary accounts
+        revenue_account = self.env['vighnahar_agro.account'].search([('account_type', '=', 'revenue')], limit=1)
+        receivable_account = self.env['vighnahar_agro.account'].search([('account_type', '=', 'receivable')], limit=1)
+        tax_account = self.env['vighnahar_agro.account'].search([('account_type', '=', 'tax')], limit=1)
+
+        # Raise an error if any necessary account is missing
+        if not revenue_account:
+            raise ValidationError("Revenue account is missing. Please configure it in the chart of accounts.")
+        if not receivable_account:
+            raise ValidationError("Receivable account is missing. Please configure it in the chart of accounts.")
+        if not tax_account:
+            raise ValidationError("Tax account is missing. Please configure it in the chart of accounts.")
+        
+        # Initialize lists for journal items
+        journal_items = []
+        total_debit = 0.0
+        total_credit = 0.0
+
+        # Loop through invoice lines and create journal items
+        for line in self.customer_invoice_line_ids:
+            # Get tax-related data if applicable
+            tax_id = line.tax_ids[:1] if line.tax_ids else None  # Take the first tax if available
+            tax_amount = line.tax_amount if tax_id else 0.0  # Calculate tax amount if available
+
+            # Revenue Credit (sales of goods or services)
+            journal_items.append((0, 0, {
+                'entry_id': journal_entry.id,
+                'account_id': revenue_account.id,
+                'party_id': self.party_id.id,
+                'debit': 0.0,
+                'credit': line.tax_excluded_amount,
+                'date': self.date,
+                'product_id': line.product_id.id if line.product_id else False,
+                'customer_invoice_id': self.id,
+                'tax_id': tax_id.id if tax_id else False,
+            }))
+            total_credit += line.tax_excluded_amount
+
+            # Tax Credit (if applicable)
+            if tax_id:
+                journal_items.append((0, 0, {
+                    'entry_id': journal_entry.id,
+                    'account_id': tax_account.id,
+                    'party_id': self.party_id.id,
+                    'debit': 0.0,
+                    'credit': tax_amount,
+                    'date': self.date,
+                    'customer_invoice_id': self.id,
+                    'tax_id': tax_id.id if tax_id else False,
+                }))
+                total_credit += tax_amount
+
+            # Receivable Debit (Accounts Receivable)
+            journal_items.append((0, 0, {
+                'entry_id': journal_entry.id,
+                'account_id': receivable_account.id,
+                'party_id': self.party_id.id,
+                'debit': line.tax_included_amount,  # Total amount including tax
+                'credit': 0.0,
+                'date': self.date,
+                'product_id': line.product_id.id if line.product_id else False,
+                'customer_invoice_id': self.id,
+            }))
+            total_debit += line.tax_included_amount
+
+        # Validation to ensure Debit and Credit are equal
+        if round(total_debit, 2) != round(total_credit, 2):
+            raise ValidationError(f"Total debit ({total_debit}) and credit ({total_credit}) are not equal! Please check the invoice details.")
+
+        # Update journal entry with journal items and post the entry
+        self.write({'journal_item_ids': journal_items})
+        journal_entry.post_entry()
+
 
     def _send_invoice_email(self, rec):
         """Send the invoice email to the customer."""
@@ -284,6 +399,31 @@ class CustomerInvoiceLine(models.Model):
         store=False,
         help="Indicates if the converted quantity is available in the warehouse."
     )
+    
+    # Field to select taxes
+    tax_ids = fields.Many2many('vighnahar_agro.account_tax', string="Taxes", domain=[('active', '=', True)],
+                               relation='vighnahar_agro_customer_invoice_line_account_tax_rel')
+    tax_excluded_amount = fields.Float(string='Tax Excluded Amount', compute='_compute_tax_excluded_amount', store=True)
+    tax_amount = fields.Float(string='Tax Amount', compute='_compute_tax_amount', store=True)
+    tax_included_amount = fields.Float(string='Tax Included Amount', compute='_compute_tax_included_amount', store=True)
+   
+    @api.depends('converted_quantity', 'price')
+    def _compute_tax_excluded_amount(self):
+        for line in self:
+            line.tax_excluded_amount = line.converted_quantity * line.price
+
+    @api.depends('tax_ids', 'tax_excluded_amount')
+    def _compute_tax_amount(self):
+        for line in self:
+            total_tax = 0.0
+            for tax in line.tax_ids:
+                total_tax += (tax.amount / 100) * line.tax_excluded_amount
+            line.tax_amount = total_tax
+
+    @api.depends('tax_excluded_amount', 'tax_amount')
+    def _compute_tax_included_amount(self):
+        for line in self:
+            line.tax_included_amount = line.tax_excluded_amount + line.tax_amount
 
     @api.depends('product_id', 'customer_invoice_id.warehouse_id', 'converted_quantity')
     def _compute_is_available(self):
@@ -340,11 +480,6 @@ class CustomerInvoiceLine(models.Model):
             product_ids = self.env['vighnahar_agro.product'].search([('can_be_sold', '=', True)])
             category_ids = product_ids.mapped('product_category_id')
             line.available_product_category_ids = category_ids
-
-
-    
-    
-
 
 
 
@@ -407,9 +542,6 @@ class PaymentLine(models.Model):
         for line in self:
             line.total = line.quantity * line.price
             
-    
-            
-
 
 
 class DownpaymentWizard(models.TransientModel):
