@@ -494,7 +494,7 @@ class Payment(models.Model):
     date = fields.Date(string="Date", default=fields.Date.today)
     invoice_type = fields.Selection([('regular', 'Regular Invoice'), ('percentage', 'Downpayment(Percentage)'), ('fixed_amount', 'Downpayment(Fixed Amount)')], string='Invoice Type', default='regular')
     amount = fields.Float(string='Amount', compute='_compute_amount', store=True)
-    state = fields.Selection([('draft', 'Draft'), ('paid', 'Paid')], string='Status', default='draft', required=True)
+    state = fields.Selection([('pending', 'Pending'), ('paid', 'Paid')], string='Status', default='pending', required=True)
     warehouse_id = fields.Many2one('vighnahar_agro.warehouse', string = "Warehouse", required=True)
     payment_line_ids = fields.One2many('vighnahar_agro.payment_line', 'payment_id', string='Payment Lines')
 

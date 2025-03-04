@@ -13,12 +13,7 @@ class SupplierInvoice(models.Model):
     is_labor = fields.Boolean(string="Is Labor", default=False)
     
     # Update the party_id field to filter only 'labor' parties if is_labor is True
-    party_id = fields.Many2one(
-        'vighnahar_agro.party', 
-        string="Party/Supplier", 
-        required=True, 
-        domain="[('is_supplier', '=', True), ('party_type', '!=', 'labor')]" if not is_labor else "[('is_supplier', '=', True), ('party_type', '=', 'labor')]"
-    )
+    party_id = fields.Many2one('vighnahar_agro.party', string="Party/Supplier", required=True, domain=[('is_supplier', '=', True)])
     
     date = fields.Datetime(string="Date", default=fields.Datetime.now)
     total_amount_tax_excluded = fields.Float(string="Total Amount (Excluding Tax)", compute='_compute_total_amount_tax_excluded', store=True)
@@ -38,10 +33,11 @@ class SupplierInvoice(models.Model):
     ], default='draft', string="Invoice Status")
     
     payment_status = fields.Selection([
+        ('draft', 'Draft'),
         ('pending', 'Pending'),
         ('partial', 'Partial'),
         ('paid', 'Paid'),
-    ], compute='_compute_payment_status', string='Payment Status', default='pending', store=True)
+    ], compute='_compute_payment_status', string='Payment Status', default='draft', store=True)
     
     has_tax_lines = fields.Boolean(compute='_compute_has_tax_lines', string="Has Tax Lines", store=True)
     
@@ -103,13 +99,13 @@ class SupplierInvoice(models.Model):
         for record in self:
             # _logger.info(f"Computing payment status for {record.id}: total_amount = {record.total_amount}, paid_amount = {record.paid_amount}")
             if not record.supplier_invoice_line_ids or record.total_amount == 0:
-                record.payment_status = 'pending'
+                record.payment_status = 'draft'
             elif record.paid_amount == record.total_amount:
                 record.payment_status = 'paid'
             elif record.paid_amount > 0.0:
                 record.payment_status = 'partial'
             else:
-                record.payment_status = 'pending'
+                record.payment_status = 'draft'
 
     @api.depends('payment_ids.amount', 'payment_ids.state')
     def _compute_total_paid(self):
@@ -187,6 +183,7 @@ class SupplierInvoice(models.Model):
         # Create Journal Entry based on the invoice details
         self._create_journal_entry()
         
+        self.payment_status = 'pending'
         self.state = 'post'
 
 

@@ -98,7 +98,7 @@
                 <field name="date" string="Date"/>
                 <field name="invoice_type" string="Invoice Type"/>
                 <field name="warehouse_id"/>
-                <field name="total_amount" string="Total Amount"/>
+                <field name="total_amount" string="Total Amount" sum="Total Amount"/>
                 <field name="state" string="State" widget="badge" 
                        decoration-success="state == 'paid'" 
                        decoration-info="state == 'draft'" 
@@ -128,8 +128,8 @@
             <form string="Payment">
                 <header>
                     <button name="action_confirm_payment" type="object" string="Confirm Payment" 
-                            state="draft" class="oe_highlight" invisible="state != 'draft'"/>
-                    <field name="state" widget="statusbar" statusbar_visible="draft,paid"/>
+                                state="pending" class="oe_highlight" invisible="state != 'pending'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="pending,paid"/>
                 </header>
                 <sheet>
                     <group>
@@ -180,10 +180,9 @@
                 <field name="party_id"/>
                 <field name="warehouse_id"/>
                 <field name="date" string="Date"/>
-                <field name="amount" string="Amount"/>
-                <field name="state" string="Status" widget="badge" 
-                       decoration-success="state == 'paid'" 
-                       decoration-info="state == 'draft'"/>
+                <field name="amount" string="Amount" sum="Amount"/>
+                <field name="state" string = "Status" widget="badge" decoration-success="state == 'paid'"
+                                                                     decoration-info="state == 'pending'"/>
             </tree>
         </field>
     </record>
