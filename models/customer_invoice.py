@@ -303,7 +303,19 @@ class CustomerInvoice(models.Model):
                 # Send the reminder message if the invoice's payment notification date is due
                 if invoice.party_id.contact:
                     party_name = invoice.party_id.name
-                    message = f"Dear {party_name}, your payment of {invoice.name} is pending. Please make your payment."
+                    # message = f"Dear {party_name}, your payment of {invoice.name} is pending. Please make your payment."
+                    invoice_number = invoice.name
+                    remaining_amount = invoice.remaining_amount
+                    due_date = invoice.payment_notification_date.strftime('%Y-%m-%d')  # Format the due date
+
+                    # Construct the reminder message
+                    message = f"""
+                                Hello {party_name},
+                                Your payment of Rs. {remaining_amount} is pending for Invoice #{invoice_number}, due on {due_date}. Kindly make the payment at your earliest convenience to avoid any disruption.
+                                If you've already made the payment, kindly ignore this message.
+                                Thank you,
+                                Vighnahar Agro"""
+                                
                     self.send_whatsapp_message(invoice.party_id.contact, message)
                     _logger.info(f"Payment reminder sent to {invoice.party_id.contact}")
 

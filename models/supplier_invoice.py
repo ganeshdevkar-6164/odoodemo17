@@ -10,7 +10,7 @@ class SupplierInvoice(models.Model):
     description = fields.Text(string="Description")
     
     # Add is_labor checkbox field
-    is_labor = fields.Boolean(string="Is Labor", default=False)
+    # is_labor = fields.Boolean(string="Is Labor", default=False)
     
     # Update the party_id field to filter only 'labor' parties if is_labor is True
     party_id = fields.Many2one('vighnahar_agro.party', string="Party/Supplier", required=True, domain=[('is_supplier', '=', True)])
@@ -51,18 +51,7 @@ class SupplierInvoice(models.Model):
             vals['name'] = self.env['ir.sequence'].next_by_code('vighnahar_agro.supplier_invoice') or 'New'
         return super(SupplierInvoice, self).create(vals)
     
-    @api.model
-    def create(self, vals):
-        if vals.get('is_labor', False):
-            vals['warehouse_id'] = False  # Automatically unset warehouse_id if is_labor is True
-        return super(SupplierInvoice, self).create(vals)
-
-    def write(self, vals):
-        if vals.get('is_labor', False):
-            vals['warehouse_id'] = False  # Automatically unset warehouse_id if is_labor is True
-        return super(SupplierInvoice, self).write(vals)
-    
-       
+          
     @api.depends('supplier_invoice_line_ids.tax_ids')
     def _compute_has_tax_lines(self):
         for invoice in self:

@@ -16,7 +16,6 @@
                             <group>
                                 <field name="amount"/>
                                 <field name="type_tax_use"/>
-                                <field name="price_include"/>
                                 <field name="active"/>
                             </group>
                         </group>

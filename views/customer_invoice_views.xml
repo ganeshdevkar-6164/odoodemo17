@@ -70,8 +70,8 @@
                                 <tree editable="bottom">
                                     <field name="account_id"/>
                                     <field name="product_id" string="Label"/>
-                                    <field name="debit"/>
-                                    <field name="credit"/>
+                                    <field name="debit" sum="debit"/>
+                                    <field name="credit" sum="credit"/>
                                     <field name="tax_id"/>
                                 </tree>
                             </field>

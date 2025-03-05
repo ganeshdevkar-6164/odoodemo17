@@ -121,7 +121,16 @@
                 <field name="party_id"/>
                 <field name="date"/>
                 <field name="journal_id"/>
-                <field name="total_amount"/>
+                <!-- Conditionally display total_amount with sign based on journal type -->
+                <!-- <field name="total_amount" 
+                    string="Total Amount" 
+                    sum="Total Amount"
+                    invisible="1"
+                   /> -->
+                <field name="total_amount_signed" 
+                    string="Total Amount" 
+                    sum="Total Amount"
+                   />
                 <field name="state"/>
                 <button name="action_open_related_invoice" type="object" string="View" icon="fa-eye"/>
             </tree>

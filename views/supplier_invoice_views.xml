@@ -39,7 +39,7 @@
                             <field name="name"/>                            
                             <field name="party_id" domain="[('is_supplier', '=', True)]"/>
                             <field name="description"/>
-                            <field name="is_labor"/>
+                            <!-- <field name="is_labor"/> -->
                         </group>                                                                                                                                                                                                         
                         <group>                                     
                             <field name="date"/>  
@@ -79,8 +79,8 @@
                                     <field name="account_id"/>
                                     <field name="product_id" string="Label"/>
                                     <!-- <field name="party_id"/> -->
-                                    <field name="debit"/>
-                                    <field name="credit"/>
+                                    <field name="debit" sum="debit"/>
+                                    <field name="credit" sum="credit"/>
                                     <field name="tax_id"/>
                                 </tree>
                             </field>

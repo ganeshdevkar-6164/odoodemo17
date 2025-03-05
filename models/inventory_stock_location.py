@@ -28,4 +28,4 @@ class InventoryLine(models.Model):
     product_category_id = fields.Many2one('vighnahar_agro.product_category', string='Product Category')
     product_id = fields.Many2one('vighnahar_agro.product', string='Product')
     quantity = fields.Float(string='On Hand Quantity')
-    uom_id = fields.Many2one('vighnahar_agro.uom', string='UOM')
+    uom_id = fields.Many2one('vighnahar_agro.uom', related='product_id.uom_id', string='UOM')

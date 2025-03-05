@@ -91,6 +91,19 @@ class JournalEntry(models.Model):
     supplier_invoice_id = fields.Many2one("vighnahar_agro.supplier_invoice", string="Supplier Invoice")
     customer_invoice_id = fields.Many2one("vighnahar_agro.customer_invoice", string="Customer Invoice")
     
+    # Computed field to display adjusted total amount based on journal type
+    total_amount_signed = fields.Float(string='Total Amount Signed', compute='_compute_total_amount_signed', store=True)
+    
+    @api.depends('journal_id', 'total_amount')
+    def _compute_total_amount_signed(self):
+        for rec in self:
+            if rec.journal_id.type == 'purchase':  # Vendor Bill (Purchase)
+                rec.total_amount_signed = -rec.total_amount  # Make the amount negative
+            elif rec.journal_id.type == 'sale':  # Customer Invoice (Sale)
+                rec.total_amount_signed = rec.total_amount  # Keep the amount positive
+            else:
+                rec.total_amount_signed = rec.total_amount  # Default case, if it's neither purchase nor sale
+                
     def action_open_related_invoice(self):
         """ Open the related Supplier Invoice if found by matching name """
         self.ensure_one()
