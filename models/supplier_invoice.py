@@ -456,6 +456,11 @@ class SupplierPayment(models.Model):
             paid_amount = sum(payment.amount for payment in self.invoice_id.payment_ids if payment.state == 'paid')
             self.invoice_id.paid_amount = paid_amount
             
+
+
+
+        
+    
     
     
     @api.model
@@ -491,19 +496,8 @@ class SupplierPaymentQRCodeWizard(models.TransientModel):
     def action_done(self):
         # Update the payment state to 'paid'
         self.payment_id.state = 'paid'
-        # Show success animation
-        return {
-            'name': 'Payment Successful',
-            'type': 'ir.actions.act_window',
-            'res_model': 'vighnahar_agro.payment_success_wizard',
-            'view_mode': 'form',
-            'view_id': self.env.ref('vighnahar_agro.view_payment_success_wizard_form').id,
-            'target': 'new',
-            'context': {
-                'default_payment_amount': self.amount,
-                'default_payment_method': 'UPI Payment',
-            }
-        }
+        # Close the wizard
+        return {'type': 'ir.actions.act_window_close'}
 
     def action_cancel(self):
         # Update the payment state to 'cancel' when Cancel is clicked
@@ -528,21 +522,9 @@ class SupplierPaymentBankWizard(models.TransientModel):
     invoice_number = fields.Char(string="Invoice Number")  # Invoice Number field
 
     def action_done(self):
-        # Update payment state and link to invoice
+        """Set the payment state to 'paid' and close the wizard."""
         self.payment_id.state = 'paid'
-        # Show success animation
-        return {
-            'name': 'Payment Successful',
-            'type': 'ir.actions.act_window',
-            'res_model': 'vighnahar_agro.payment_success_wizard',
-            'view_mode': 'form',
-            'view_id': self.env.ref('vighnahar_agro.view_payment_success_wizard_form').id,
-            'target': 'new',
-            'context': {
-                'default_payment_amount': self.amount,
-                'default_payment_method': 'Bank Transfer',
-            }
-        }
+        return {'type': 'ir.actions.act_window_close'}
     
     def action_cancel(self):
         """Set the payment state to 'cancel' when Cancel is clicked and close the wizard."""
@@ -570,11 +552,3 @@ class SupplierPaymentBankWizard(models.TransientModel):
             res['invoice_number'] = self.env.context.get('default_invoice_number')  # Populate Invoice Number
 
         return res
-    
-    
-class PaymentSuccessWizard(models.TransientModel):
-    _name = 'vighnahar_agro.payment_success_wizard'
-    _description = 'Payment Success Animation Wizard'
-
-    payment_amount = fields.Float(string="Amount Paid", readonly=True)
-    payment_method = fields.Char(string="Payment Method", readonly=True)
