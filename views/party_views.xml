@@ -14,19 +14,19 @@
                         <group>
                             <group>
                                 <field name="name"/>                                
-                                <field name="registration_date"/>
+                                
                                 <field name="is_supplier" widget="checkbox"/>
                                 <field name="is_customer" widget="checkbox"/>
                                 <field name="party_type"/>
                             </group>
                             <group>
-                                <group>
-                                    <field name="documents" filename = "documents_name"/>
-                                    <field name="documents_name" invisible = "1"/>
-                                </group>
-                                <group>
-                                    <field name="image" widget="image" class="oe_avatar" options="{'preview_image': 'image'}"/>
-                                </group>
+                                <field name="registration_date"/>
+                                
+                                   
+                                <field name="image" widget="image" class="img-fluid" style="max-height: 200px; max-width: 200px; overflow: hidden;"/>
+                                    
+                              
+                                
                             </group>
                         </group>
                         <notebook>
@@ -65,12 +65,23 @@
                                     </tree>
                                 </field>
                             </page>
-                            <page string = "Invoice">
+                            <page string = "Bank Details">
                                 <field name="bank_account_ids" widget="one2many_list"  >
                                     <tree editable="bottom">
                                         <field name="name" string="Account Number"/> 
+                                        <field name="ifsc_code" string="IfSC Code"/>
+                                        <field name="branch" string="Branch"/>
                                         <field name="banks_id" string="Bank"/>
                                         <field name="party_id" string="Account Holder"/>
+                                        <field name="upi_id"/>
+                                    </tree>
+                                </field>
+                            </page>
+                            <page string="Documents">
+                                <field name="document_ids">
+                                    <tree editable="bottom">
+                                        <field name="name"/>
+                                        <field name="file" filename="file_name"/>
                                     </tree>
                                 </field>
                             </page>

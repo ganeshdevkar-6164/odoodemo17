@@ -136,9 +136,10 @@
             <tree>
                 <field name="name"/>
                 <field name="payment_date"/>
-                <field name="amount" sum="Amount"/>
+                
                 <field name="payment_method"/>
                 <field name="invoice_id"/>
+                <field name="amount" sum="Amount"/>
                 <field name="state" widget="badge" decoration-success="state == 'paid'"
                                                    decoration-info="state == 'draft'"/>
             </tree>
@@ -157,9 +158,10 @@
                             <field name="name"/>
                             <field name="payment_date"/>
                             <field name="amount"/>
-                            <field name="bank_account_id" invisible="payment_method != 'bank'" />
+                            <field name="bank_account_id" invisible="payment_method not in ('bank', 'online')" />
                         </group>
                         <group>
+                            <field name="party_id"/>
                             <field name="payment_method"/>
                             <field name="invoice_id" string="Memo" readonly="1"/>
                             <field name="state"/>
@@ -183,5 +185,52 @@
     </record>
 
     <menuitem id="menu_supplier_payment" name="Supplier Payments" parent="menu_supplier" action="action_supplier_payment"/>
+
+    <record id="view_supplier_payment_qr_wizard_form" model="ir.ui.view">
+        <field name="name">supplier.payment.qr.wizard.form</field>
+        <field name="model">vighnahar_agro.supplier_payment_qr_wizard</field>
+        <field name="arch" type="xml">
+            <form string="UPI Payment QR Code">
+                <group>
+                    <field name="qr_code_image" widget='image' readonly="1"/>
+                    <field name="amount" readonly="1"/>
+                </group>
+                <footer>
+                    <!-- Done Button to mark the payment as 'paid' -->
+                    <button string="Done" type="object" name="action_done" class="btn-primary"/>
+                    <!-- Cancel Button to close the wizard -->
+                    <button string="Cancel" class="btn-secondary" special="cancel" />
+                </footer>
+            </form>
+        </field>
+    </record>
+    
+    <record id="view_supplier_payment_bank_wizard_form" model="ir.ui.view">
+        <field name="name">supplier.payment.bank.wizard.form</field>
+        <field name="model">vighnahar_agro.supplier_payment_bank_wizard</field>
+        <field name="arch" type="xml">
+            <form string="Bank Payment Details">
+                <group>
+                    <group>
+                        <field name="payment_id" readonly="1"/>
+                        <field name="invoice_number"/>
+                        <field name="amount"/>
+                        <field name="bank_holder_name"/>
+                    </group>
+                    <group>
+                        <field name="bank_name"/>
+                        <field name="account_number"/>
+                        
+                        <field name="branch"/>
+                        <field name="ifsc_code"/>
+                    </group>
+                </group>
+                <footer>
+                    <button name="action_done" type="object" string="Done" class="btn-primary"/>
+                    <button name="action_cancel" type="object" string="Cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
 
 </odoo>

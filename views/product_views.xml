@@ -26,7 +26,7 @@
                                 <field name="description"/>
                                 <field name="can_be_sold" widget="boolean_toggle"/>
                                 <field name="can_be_purchased" widget="boolean_toggle"/>
-                                <field name="is_service" widget="boolean_toggle"/>
+                                
                             </group>
                             <group>
                                 <group>                                   
@@ -87,15 +87,15 @@
                                     </div>
                                 </form>
                             </page>
-                            <page string="Attributes Variants">
+                            <!-- <page string="Attributes Variants">
                                 <field name="attribute_line_ids" widget="one2many_list">
                                     <tree editable="bottom">
                                         <field name="attributes_id"/>
                                         <field name="attributes_line_id"/>
                                     </tree>
                                 </field>
-                            </page>
-                            <page string="Inventory">
+                            </page> -->
+                            <!-- <page string="Inventory">
                                 <group>
                                     <group string = "Operations">   
                                         <field name="route_buy"/>
@@ -107,15 +107,15 @@
                                             <field name="volume"/>
                                         </group>
                                         <group>
-                                            <!-- <field name="weight_uom_id"/>
-                                            <field name="volume_uom_id" /> -->
+                                            <field name="weight_uom_id"/>
+                                            <field name="volume_uom_id" />
                                         </group>
                                     </group>
                                     <group string = "Traceability">
                                         <field name="tracking" widget="radio"/>                                           
                                     </group>
                                 </group>
-                            </page>
+                            </page> -->
                             <page string="Purchase" invisible="can_be_purchased == False">
                                 <field name="supplier_info_ids" widget="one2many_list">
                                     <tree editable="bottom">
@@ -129,16 +129,15 @@
                                 </field>
                             </page>
                             <page string="Sales" invisible="can_be_sold == False">
-                                <field name="customer_info_ids" widget="one2many_list">
-                                    <tree editable="bottom">
-                                        <field name="party_id"/>
-                                        <field name="price"/>
-                                        <field name="uom_id" optional = "hide"/>
-                                        <field name="min_qty" optional = "hide"/>
-                                        <field name="delay" />
-                                        <field name="company_id" optional = "hide"/>
-                                    </tree>
-                                </field>
+                                <group>
+                                    <group string="Upsell and Cross-Sell">
+                                        <field name="optional_product_ids" widget="many2many_tags"
+                                            placeholder="Recommended when adding to cart"/>
+                                    </group>
+                                    <group>
+                                    </group>
+                                </group>
+                                
                             </page>
                         </notebook>
                     </sheet>
@@ -149,7 +148,7 @@
         <record id="view_product_kanban" model="ir.ui.view">
             <field name="name">product.kanban</field>
             <field name="model">vighnahar_agro.product</field>
-            <field name="priority">10</field>
+            <field name="priority">10</field> 
             <field name="arch" type="xml">
                 <kanban class="o_product_kanban">
                     <field name="id"/>

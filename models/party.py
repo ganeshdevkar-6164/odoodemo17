@@ -37,10 +37,12 @@ class Party(models.Model):
     #Accounting information
     
 
+    # Documents (One2many relation)
+    document_ids = fields.One2many('vighnahar_agro.party_document', 'party_id', string='Documents')
     
     
     
-    #invoiceing
+    #Bank Details
     bank_account_ids = fields.One2many('vighnahar_agro.bank_account', 'party_id', string='Bank Account')
     
     
@@ -90,5 +92,15 @@ class FarmDetails(models.Model):
             else:
                 line.converted_quantity = line.quantity
                 line.converted_uom_id = False
+
+
+class PartyDocument(models.Model):
+    _name = 'vighnahar_agro.party_document'
+    _description = 'Party Documents'
+
+    party_id = fields.Many2one('vighnahar_agro.party', string='Party', ondelete='cascade')
+    name = fields.Char(string='Document Name', required=True)
+    file = fields.Binary(string='File', required=True)
+    file_name = fields.Char(string="File Name")
     
     

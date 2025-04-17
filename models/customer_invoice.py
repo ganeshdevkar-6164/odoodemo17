@@ -20,20 +20,21 @@ class CustomerInvoice(models.Model):
     invoice_type = fields.Selection([('regular', 'Regular Invoice'), ('percentage', 'Downpayment(Percentage)'), ('fixed_amount', 'Downpayment(Fixed Amount)')], string='Invoice Type', default='regular')
     # total_amount = fields.Float(string='Total Amount', compute='_compute_total_amount', store=True)
     state = fields.Selection([('draft', 'Draft'), ('invoice', 'Invoice'), ('cancel', 'Cancel'), ('payment', 'In Payment'),('downpayment','Downpayment'),('paid','Paid')], string='Status', default='draft', required=True)
-    warehouse_id = fields.Many2one('vighnahar_agro.warehouse', string = "Warehouse", required=True)
-    payment_id = fields.Many2one('vighnahar_agro.payment', string='Payment')
+    warehouse_id = fields.Many2one('vighnahar_agro.warehouse', string = "Warehouse", required=True , ondelete='cascade')
+    payment_id = fields.Many2one('vighnahar_agro.payment', string='Payment' , ondelete='cascade')
     payment_notification_date = fields.Datetime(string='Payment Notification Date')
     message_sent = fields.Boolean(string='Payment Reminder Sent', default=False)
     downpayment = fields.Float(string='Downpayment Amount', default=0.0,  readonly=True)
     remaining_amount = fields.Float(string='Remaining Amount', compute='_compute_remaining_amount', store=True)
-    customer_invoice_line_ids = fields.One2many('vighnahar_agro.customer_invoice_line', 'customer_invoice_id', string='Invoice Lines', required=True)
+    customer_invoice_line_ids = fields.One2many('vighnahar_agro.customer_invoice_line', 'customer_invoice_id', string='Invoice Lines', required=True , ondelete='cascade')
     
     total_amount_tax_excluded = fields.Float(string="Total Amount (Excluding Tax)", compute='_compute_total_amount_tax_excluded', store=True)
     tax_amount = fields.Float(string="Tax Amount", compute='_compute_tax_amount', store=True)
     total_amount = fields.Float(string='Total Amount', compute='_compute_total_amount', store=True)
     total_amount_tax_included = fields.Float(string="Total Amount (Including Tax)", compute='_compute_total_amount_tax_included', store=True)    
-    journal_id = fields.Many2one('vighnahar_agro.journal', string='Journal', required=True, domain=[('type', '=', 'sale')])
-    journal_item_ids = fields.One2many('vighnahar_agro.journal_item', 'customer_invoice_id', string="Journal Items")
+    journal_id = fields.Many2one('vighnahar_agro.journal', string='Journal', required=True, domain=[('type', '=', 'sale')] , ondelete='cascade', 
+                                 default=lambda self: self.env.ref('vighnahar_agro.journal_customer_invoice', raise_if_not_found=False))
+    journal_item_ids = fields.One2many('vighnahar_agro.journal_item', 'customer_invoice_id', string="Journal Items" , ondelete='cascade')
     has_tax_lines = fields.Boolean(compute='_compute_has_tax_lines', string="Has Tax Lines", store=True)
 
     
@@ -129,15 +130,16 @@ class CustomerInvoice(models.Model):
         # Get the necessary accounts
         revenue_account = self.env['vighnahar_agro.account'].search([('account_type', '=', 'revenue')], limit=1)
         receivable_account = self.env['vighnahar_agro.account'].search([('account_type', '=', 'receivable')], limit=1)
-        tax_account = self.env['vighnahar_agro.account'].search([('account_type', '=', 'tax')], limit=1)
+        # → Instead of the old generic tax account, fetch your Sales Tax (Output VAT) account:
+        sales_tax_account = self.env['vighnahar_agro.account'].search([('code', '=', '2100')], limit=1)
 
         # Raise an error if any necessary account is missing
         if not revenue_account:
             raise ValidationError("Revenue account is missing. Please configure it in the chart of accounts.")
         if not receivable_account:
             raise ValidationError("Receivable account is missing. Please configure it in the chart of accounts.")
-        if not tax_account:
-            raise ValidationError("Tax account is missing. Please configure it in the chart of accounts.")
+        if not sales_tax_account:
+            raise ValidationError("Sales Tax (Output VAT) account is missing. Please configure account code 2100.")
         
         # Initialize lists for journal items
         journal_items = []
@@ -168,7 +170,7 @@ class CustomerInvoice(models.Model):
             if tax_id:
                 journal_items.append((0, 0, {
                     'entry_id': journal_entry.id,
-                    'account_id': tax_account.id,
+                    'account_id': sales_tax_account.id,
                     'party_id': self.party_id.id,
                     'debit': 0.0,
                     'credit': tax_amount,
@@ -267,8 +269,8 @@ class CustomerInvoice(models.Model):
     #send whatsapp message using ultramsg api and payment_notification_date           
     def send_whatsapp_message(self, phone_number, message):
         """ Function to send WhatsApp message using UltraMsg API """
-        instance_id = 'instance106882'  # Replace with your instance ID
-        token = 'vqi4mooaiyd5ay5b'  # Replace with your API token
+        instance_id = 'instance107303'  # Replace with your instance ID
+        token = 'mpvx9yyty0vm5v5w'  # Replace with your API token
         url = f"https://api.ultramsg.com/{instance_id}/messages/chat"
        
         payload = {
@@ -289,7 +291,7 @@ class CustomerInvoice(models.Model):
         """Scheduled action to send payment reminders."""
         # Get invoices that are in the 'invoice' state and have a set payment_notification_date
         invoices = self.env['vighnahar_agro.customer_invoice'].search([
-            ('state', 'in', ['invoice', 'downpayment']),  # Handle both 'invoice' and 'downpayment' states
+            ('state', 'in', ['invoice', 'downpayment','payment']),  # Handle both 'invoice' and 'downpayment' states
             ('payment_notification_date', '!=', False),
             ('message_sent', '=', False),  # Check if message has not been sent yet
         ])
@@ -336,7 +338,7 @@ class CustomerInvoice(models.Model):
                 'state': 'code',
                 'code': 'model.send_payment_reminder()',  # Method to call
                 'interval_type': 'minutes',  # You can set this to minutes, hours, days, etc.
-                'interval_number': 2,  # 1440 minutes = 1 day, adjust this based on your needs
+                'interval_number': 1,  # 1440 minutes = 1 day, adjust this based on your needs
                 'numbercall': -1,  # Infinite execution
                 'nextcall': fields.Datetime.now(),
             })
@@ -393,16 +395,17 @@ class CustomerInvoiceLine(models.Model):
     _name = 'vighnahar_agro.customer_invoice_line'
     _description = 'Customer Invoice Line'
 
-    customer_invoice_id = fields.Many2one('vighnahar_agro.customer_invoice', string='Invoice')
+    customer_invoice_id = fields.Many2one('vighnahar_agro.customer_invoice', string='Invoice', ondelete='cascade')
     uom_category_id = fields.Many2one('vighnahar_agro.uom_category', related='product_id.category_id', string='UOM Category')
-    product_category_id = fields.Many2one('vighnahar_agro.product_category', string='Product Category', domain="[('id', 'in', available_product_category_ids)]")
-    product_id = fields.Many2one('vighnahar_agro.product', string='Product', domain="[('product_category_id', '=', product_category_id)]", required=True)
+    product_category_id = fields.Many2one('vighnahar_agro.product_category', string='Product Category', domain="[('id', 'in', available_product_category_ids)]", ondelete='cascade')
+    product_id = fields.Many2one('vighnahar_agro.product', string='Product', domain="[('product_category_id', '=', product_category_id)]", required=True, ondelete='cascade')
+    
     quantity = fields.Float(string='Quantity', digits=(16, 4))
-    uom_id = fields.Many2one('vighnahar_agro.uom', string='UOM', domain="[('category_id', '=', uom_category_id)]")
+    uom_id = fields.Many2one('vighnahar_agro.uom', string='UOM', domain="[('category_id', '=', uom_category_id)]", ondelete='cascade')
     price = fields.Float(string='Unit Price', related='product_id.sales_price', store=True)
     total = fields.Float(string='Total Price', compute='_compute_total', store=True)
     converted_quantity = fields.Float(string='Converted Quantity', digits=(16, 4), compute='_compute_converted_quantity', store=True)
-    converted_uom_id = fields.Many2one('vighnahar_agro.uom', string='Converted UOM', compute='_compute_converted_quantity', store=True)
+    converted_uom_id = fields.Many2one('vighnahar_agro.uom', string='Converted UOM', compute='_compute_converted_quantity', store=True, ondelete='cascade')
     available_product_category_ids = fields.Many2many('vighnahar_agro.product_category', compute='_compute_available_product_categories', relation='vighnahar_agro_prod_cat_invoice_line_rel')
     
     is_available = fields.Boolean(
@@ -414,7 +417,7 @@ class CustomerInvoiceLine(models.Model):
     
     # Field to select taxes
     tax_ids = fields.Many2many('vighnahar_agro.account_tax', string="Taxes", domain=[('active', '=', True)],
-                               relation='vighnahar_agro_customer_invoice_line_account_tax_rel')
+                               relation='vighnahar_agro_customer_invoice_line_account_tax_rel', ondelete='cascade')
     tax_excluded_amount = fields.Float(string='Tax Excluded Amount', compute='_compute_tax_excluded_amount', store=True)
     tax_amount = fields.Float(string='Tax Amount', compute='_compute_tax_amount', store=True)
     tax_included_amount = fields.Float(string='Tax Included Amount', compute='_compute_tax_included_amount', store=True)
@@ -492,8 +495,19 @@ class CustomerInvoiceLine(models.Model):
             product_ids = self.env['vighnahar_agro.product'].search([('can_be_sold', '=', True)])
             category_ids = product_ids.mapped('product_category_id')
             line.available_product_category_ids = category_ids
+    
+    @api.onchange('product_id')
+    def _onchange_set_uom_only(self):
+        """ Just set the default UoM when a product is picked. """
+        if self.product_id:
+            # copy the product’s default UoM onto the line
+            self.uom_id = self.product_id.uom_id
+        else:
+            # clear it if no product
+            self.uom_id = False
 
-
+            
+  
 
 class Payment(models.Model):
     _name = 'vighnahar_agro.payment'
@@ -501,14 +515,14 @@ class Payment(models.Model):
     _order = "id desc"
 
     name = fields.Char(string="Reference", default='New')
-    customer_invoice_id = fields.Many2one('vighnahar_agro.customer_invoice', string='Customer Invoice', required=True)
-    party_id = fields.Many2one('vighnahar_agro.party', string="Party", required=True, domain=[('is_customer', '=', True)])
+    customer_invoice_id = fields.Many2one('vighnahar_agro.customer_invoice', string='Customer Invoice', required=True, ondelete='cascade')
+    party_id = fields.Many2one('vighnahar_agro.party', string="Party", required=True, domain=[('is_customer', '=', True)], ondelete='cascade')
     date = fields.Date(string="Date", default=fields.Date.today)
     invoice_type = fields.Selection([('regular', 'Regular Invoice'), ('percentage', 'Downpayment(Percentage)'), ('fixed_amount', 'Downpayment(Fixed Amount)')], string='Invoice Type', default='regular')
     amount = fields.Float(string='Amount', compute='_compute_amount', store=True)
     state = fields.Selection([('pending', 'Pending'), ('paid', 'Paid')], string='Status', default='pending', required=True)
-    warehouse_id = fields.Many2one('vighnahar_agro.warehouse', string = "Warehouse", required=True)
-    payment_line_ids = fields.One2many('vighnahar_agro.payment_line', 'payment_id', string='Payment Lines')
+    warehouse_id = fields.Many2one('vighnahar_agro.warehouse', string = "Warehouse", required=True, ondelete='cascade')
+    payment_line_ids = fields.One2many('vighnahar_agro.payment_line', 'payment_id', string='Payment Lines', ondelete='cascade')
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -538,15 +552,15 @@ class PaymentLine(models.Model):
     _name = 'vighnahar_agro.payment_line'
     _description = 'Payment Line'
 
-    payment_id = fields.Many2one('vighnahar_agro.payment', string='Payment')
-    product_id = fields.Many2one('vighnahar_agro.product', string='Product')
+    payment_id = fields.Many2one('vighnahar_agro.payment', string='Payment', ondelete='cascade')
+    product_id = fields.Many2one('vighnahar_agro.product', string='Product', ondelete='cascade')
     quantity = fields.Float(string='Quantity', digits=(16, 4))
-    uom_id = fields.Many2one('vighnahar_agro.uom', string='UOM')
+    uom_id = fields.Many2one('vighnahar_agro.uom', string='UOM', ondelete='cascade')
     price = fields.Float(string='Unit Price')
     total = fields.Float(string='Total Price', compute='_compute_total', store=True)
     converted_quantity = fields.Float(string='Converted Quantity', digits=(16, 4), store=True)
-    converted_uom_id = fields.Many2one('vighnahar_agro.uom', string='Converted UOM')
-    uom_category_id = fields.Many2one('vighnahar_agro.uom_category', string='UOM Category')
+    converted_uom_id = fields.Many2one('vighnahar_agro.uom', string='Converted UOM', ondelete='cascade')
+    uom_category_id = fields.Many2one('vighnahar_agro.uom_category', string='UOM Category', ondelete='cascade')
     available_product_category_ids = fields.Many2many('vighnahar_agro.product_category', string='Available Product Categories')
 
     @api.depends('quantity', 'price')
@@ -560,7 +574,7 @@ class DownpaymentWizard(models.TransientModel):
     _name = 'vighnahar_agro.downpayment_wizard'
     _description = 'Downpayment Wizard'
 
-    customer_invoice_id = fields.Many2one('vighnahar_agro.customer_invoice', string='Customer Invoice', required=True)
+    customer_invoice_id = fields.Many2one('vighnahar_agro.customer_invoice', string='Customer Invoice', required=True, ondelete='cascade')
     invoice_type = fields.Selection(related='customer_invoice_id.invoice_type', string='Invoice Type', readonly=True)
     percentage = fields.Float(string='Downpayment Percentage')
     fixed_amount = fields.Float(string='Downpayment Fixed Amount')

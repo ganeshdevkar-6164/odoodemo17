@@ -30,7 +30,7 @@
                 <field name="description"/>
                 <field name="code"/>
                 <field name="account_type"/>
-                <field name="balance"/>
+                <field name="balance" sum ="balance"/>
             </tree>
         </field>
     </record>

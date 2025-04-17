@@ -25,7 +25,6 @@ class Account(models.Model):
         for rec in self:
             rec.display_name =f"{rec.code} - {rec.name}"
     
-    
 
 class Journal(models.Model):
     _name = 'vighnahar_agro.journal'
@@ -52,16 +51,19 @@ class JournalItem(models.Model):
     _name = 'vighnahar_agro.journal_item'
     _description = 'Journal Item'
 
-    entry_id = fields.Many2one('vighnahar_agro.journal_entry', string='Journal Entry', required=True)
+    entry_id = fields.Many2one('vighnahar_agro.journal_entry', string='Journal Entry', required=True, ondelete='cascade')
     account_id = fields.Many2one('vighnahar_agro.account', string='Account', required=True)
     party_id = fields.Many2one('vighnahar_agro.party', string='Party')
+
     debit = fields.Float(string='Debit', default=0.0)
     credit = fields.Float(string='Credit', default=0.0)
     date = fields.Date(string='Date', required=True)
-    product_id = fields.Many2one('vighnahar_agro.product', string='Product')
-    supplier_invoice_id = fields.Many2one('vighnahar_agro.supplier_invoice', string='Supplier Invoice')
-    customer_invoice_id = fields.Many2one('vighnahar_agro.customer_invoice', string='Supplier Invoice')
-    tax_id = fields.Many2one('vighnahar_agro.account_tax', string='Tax')
+
+    product_id = fields.Many2one('vighnahar_agro.product', string='Product', ondelete="cascade")
+    supplier_invoice_id = fields.Many2one('vighnahar_agro.supplier_invoice', string='Supplier Invoice', ondelete="cascade")
+    customer_invoice_id = fields.Many2one('vighnahar_agro.customer_invoice', string='Customer Invoice', ondelete="cascade")
+    labor_payment_id = fields.Many2one('vighnahar_agro.labor_payment', string='Labor Payment', ondelete="cascade")
+    tax_id = fields.Many2one('vighnahar_agro.account_tax', string='Tax', ondelete="cascade")
 
     @api.constrains('debit', 'credit')
     def _check_debit_credit(self):
@@ -83,16 +85,18 @@ class JournalEntry(models.Model):
         ('draft', 'Draft'),
         ('posted', 'Posted'),
     ], string='State', default='draft')
-    journal_item_ids = fields.One2many('vighnahar_agro.journal_item', 'entry_id', string="Journal Items")
-    
+
+    journal_item_ids = fields.One2many('vighnahar_agro.journal_item', 'entry_id', string="Journal Items", ondelete="cascade")
+
     party_id = fields.Many2one('vighnahar_agro.party', string='Party/Supplier')
     total_amount = fields.Float(string='Total Amount')
-    
-    supplier_invoice_id = fields.Many2one("vighnahar_agro.supplier_invoice", string="Supplier Invoice")
-    customer_invoice_id = fields.Many2one("vighnahar_agro.customer_invoice", string="Customer Invoice")
-    
-    # Computed field to display adjusted total amount based on journal type
+
+    supplier_invoice_id = fields.Many2one("vighnahar_agro.supplier_invoice", string="Supplier Invoice", ondelete="cascade")
+    customer_invoice_id = fields.Many2one("vighnahar_agro.customer_invoice", string="Customer Invoice", ondelete="cascade")
+    labor_payment_id = fields.Many2one('vighnahar_agro.labor_payment', string='Labor Payment', ondelete="cascade")
+
     total_amount_signed = fields.Float(string='Total Amount Signed', compute='_compute_total_amount_signed', store=True)
+
     
     @api.depends('journal_id', 'total_amount')
     def _compute_total_amount_signed(self):
@@ -131,6 +135,17 @@ class JournalEntry(models.Model):
                 'target': 'current',
             }
         
+        labor_payment = self.env['vighnahar_agro.labor_payment'].search([('name', '=', self.name)], limit=1)
+
+        if labor_payment:
+            return {
+                'type': 'ir.actions.act_window',
+                'name': 'Labor Payment',
+                'res_model': 'vighnahar_agro.labor_payment',
+                'view_mode': 'form',
+                'res_id': labor_payment.id,
+                'target': 'current',
+            }
         
         return {'type': 'ir.actions.act_window_close'}  # Close if not found
         

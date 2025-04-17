@@ -34,5 +34,13 @@
             <field name="company_id" eval="False"/>
         </record> 
 
+        <record id="seq_labor_payment" model="ir.sequence">
+            <field name="name">Labor Payment</field>
+            <field name="code">vighnahar_agro.labor_payment</field>
+            <field name="prefix">LPAY-</field>
+            <field name="padding">5</field>
+            <field name="company_id" eval="False"/>
+        </record>
+
     </data>
 </odoo>

@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="account_cash" model="vighnahar_agro.account">
+        <field name="name">Cash</field>
+        <field name="description">Cash Account</field>
+        <field name="code">1000</field>
+        <field name="account_type">asset</field>
+      
+    </record>
+
+    <record id="account_bank" model="vighnahar_agro.account">
+        <field name="name">Bank</field>
+        <field name="description">Bank Account</field>
+        <field name="code">1010</field>
+        <field name="account_type">asset</field>
+        
+    </record>
+
+    <record id="account_receivable" model="vighnahar_agro.account">
+        <field name="name">Debitors</field>
+        <field name="description">Receivable Account</field>
+        <field name="code">1100</field>
+        <field name="account_type">receivable</field>
+     
+    </record>
+
+    <record id="account_payable" model="vighnahar_agro.account">
+        <field name="name">Creditors</field>
+        <field name="description">Payable Account</field>
+        <field name="code">2000</field>
+        <field name="account_type">liability</field>
+        
+    </record>
+
+    <record id="account_sales" model="vighnahar_agro.account">
+        <field name="name">Sales Revenue</field>
+        <field name="description">Sales Revenue Account</field>
+        <field name="code">4000</field>
+        <field name="account_type">revenue</field>
+        
+    </record>
+
+    <record id="account_expense" model="vighnahar_agro.account">
+        <field name="name">Purchase Expenses</field>
+        <field name="description">Expense Account</field>
+        <field name="code">5000</field>
+        <field name="account_type">expense</field>
+        
+    </record>
+
+    <!-- ✅ Sales Tax (Output VAT) -->
+    <record id="account_sales_tax" model="vighnahar_agro.account">
+        <field name="name">Sales Tax </field>
+        <field name="description">Tax collected from customers</field>
+        <field name="code">2100</field>
+        <field name="account_type">liability</field>
+    </record>
+
+    <!-- ✅ Purchase Tax (Input VAT) -->
+    <record id="account_purchase_tax" model="vighnahar_agro.account">
+        <field name="name">Purchase Tax </field>
+        <field name="description">Tax paid to suppliers</field>
+        <field name="code">2101</field>
+        <field name="account_type">asset</field>
+    </record>
+
+</odoo>

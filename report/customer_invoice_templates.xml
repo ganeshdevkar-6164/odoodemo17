@@ -40,20 +40,20 @@
                                 border-bottom: 1px solid #000; position: relative;">
                                 <img t-att-src="'http://localhost:8069/vighnahar_agro/static/src/img/logo.png'" 
                                      alt="Logo" style="max-height: 100px; max-width: 150px; position: absolute; left: 0px;"/>
-                                <h3>श्री विघ्नहर प्रसन्न</h3>
-                                <h1>विघ्नहर ॲग्रो</h1>
+                                <h3>Shree Vighnahar Prasanna</h3>
+                                <h1>Vighnahar Agro</h1>
                                 <div style="position: absolute; right:0px; bottom:25; font-size:16px;">
-                                    <h3>श्री वैभव व्ही. कवडे</h3>
-                                    <p >मोबाईल: ९७६६५१२२३८, ८७६७२०००००</p>
-                                    <p>पोस्ट: ओझर, ता - जुन्नर, जिल्हा - पुणे</p>
+                                    <h3>Shree Vaibhav .V. Kavde</h3>
+                                    <p >Mobile: 9766512238, 8767200000</p>
+                                    <p>post: Ozar, Tal - Junnar, Dist - Pune</p>
                                 </div>
                             </div>
                             
                             <!-- Invoice Details Section -->
                             <div class="invoice-details" style="padding: 20px 0; border-bottom: 1px solid #000;">
-                                <p>पार्टी नाव: <strong><t t-esc="doc.party_id.name"/></strong></p>
-                                <p>चालान क्रमांक: <strong><t t-esc="doc.name"/></strong></p>
-                                <p>तारीख: <strong><t t-esc="doc.date"/></strong></p>
+                                <p>Party Name: <strong><t t-esc="doc.party_id.name"/></strong></p>
+                                <p>Invoice No: <strong><t t-esc="doc.name"/></strong></p>
+                                <p>Date: <strong><t t-esc="doc.date"/></strong></p>
                             </div>
                             
                             <!-- Product Table Section -->
@@ -61,11 +61,12 @@
                                 <table>
                                     <thead>
                                         <tr>
-                                            <th>उत्पादन</th>
-                                            <th>प्रमाण</th>
-                                            <th>एकक</th>
-                                            <th>किंमत</th>
-                                            <th>एकूण</th>
+                                            <th>Product</th>
+                                            <th>Quantity</th>
+                                            <th>UOM</th>
+                                            <th>Unit Price</th>
+                                            <th>Tax</th>
+                                            <th>Total</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -75,7 +76,14 @@
                                                 <td><t t-esc="line.quantity"/></td>
                                                 <td><t t-esc="line.uom_id.name"/></td>
                                                 <td><t t-esc="line.price"/></td>
-                                                <td><t t-esc="line.total"/></td>
+                                                <td>
+                                                    <t t-foreach="line.tax_ids" t-as="tax">
+                                                        <t t-esc="tax.name"/>
+                                                        <br/>
+                                                    </t>
+                                                </td>
+
+                                                <td><t t-esc="line.tax_included_amount"/></td>
                                             </tr>
                                         </t>
                                     </tbody>
@@ -84,14 +92,14 @@
                             
                             <!-- Total Amount Section -->
                             <div class="total-amount" style="text-align: right; margin-top: 20px; font-weight: bold;">
-                                <p><strong>एकूण रक्कम: <t t-esc="doc.total_amount"/></strong></p>
+                                <p><strong>Total Amount: <t t-esc="doc.total_amount"/></strong></p>
                             </div>
                             
                             <!-- Footer Section -->
                             <div class="footer-section" style="border-top: 1px solid #000; font-weight:bold;
                                  margin-top:100px; width: 100%;">
-                                <p style="text-align: left;">धन्यवाद!</p>
-                                <p style="text-align: right;">स्वाक्षरी</p>
+                                <p style="text-align: left;">Thank You!</p>
+                                <p style="text-align: right;">Signature</p>
                             </div>
                         </div>
                     </t>

@@ -1,5 +1,8 @@
 from odoo import models, fields, api
 from odoo.exceptions import ValidationError
+import qrcode
+from io import BytesIO
+import base64
 
 class SupplierInvoice(models.Model):
     _name = 'vighnahar_agro.supplier_invoice'
@@ -13,14 +16,14 @@ class SupplierInvoice(models.Model):
     # is_labor = fields.Boolean(string="Is Labor", default=False)
     
     # Update the party_id field to filter only 'labor' parties if is_labor is True
-    party_id = fields.Many2one('vighnahar_agro.party', string="Party/Supplier", required=True, domain=[('is_supplier', '=', True)])
+    party_id = fields.Many2one('vighnahar_agro.party', string="Party/Supplier", required=True, domain=[('is_supplier', '=', True)] , ondelete='cascade')
     
     date = fields.Datetime(string="Date", default=fields.Datetime.now)
     total_amount_tax_excluded = fields.Float(string="Total Amount (Excluding Tax)", compute='_compute_total_amount_tax_excluded', store=True)
     tax_amount = fields.Float(string="Tax Amount", compute='_compute_tax_amount', store=True)
     total_amount = fields.Float(string='Total Amount', compute='_compute_total_amount', store=True)
     total_amount_tax_included = fields.Float(string="Total Amount (Including Tax)", compute='_compute_total_amount_tax_included', store=True)    
-    warehouse_id = fields.Many2one('vighnahar_agro.warehouse', string = "Warehouse", required=True)
+    warehouse_id = fields.Many2one('vighnahar_agro.warehouse', string = "Receiving Warehouse", required=True, ondelete='cascade')
     amount_due = fields.Float(string="Amount Due", compute='_compute_amount_due', store=True)
     paid_amount = fields.Float(string="Paid Amount", compute='_compute_total_paid', store=True)
     
@@ -41,8 +44,14 @@ class SupplierInvoice(models.Model):
     
     has_tax_lines = fields.Boolean(compute='_compute_has_tax_lines', string="Has Tax Lines", store=True)
     
-    journal_id = fields.Many2one('vighnahar_agro.journal', string='Journal', required=True, domain=[('type', '=', 'purchase')])
-    journal_item_ids = fields.One2many('vighnahar_agro.journal_item', 'supplier_invoice_id', string="Journal Items")
+    journal_id = fields.Many2one(
+        'vighnahar_agro.journal', 
+        string='Journal', 
+        required=True, 
+        domain=[('type', '=', 'purchase')],
+        default=lambda self: self.env.ref('vighnahar_agro.journal_vendor_bill', raise_if_not_found=False )
+    )
+    journal_item_ids = fields.One2many('vighnahar_agro.journal_item', 'supplier_invoice_id', string="Journal Items" , ondelete='cascade')
 
     # Generate unique sequence number    
     @api.model
@@ -124,6 +133,7 @@ class SupplierInvoice(models.Model):
                 'default_amount': remaining_amount,  # Set the default amount to be paid
                 'default_state': 'draft',  # Set the payment state to draft by default
                 'default_bank_account_id': default_bank_account.id if default_bank_account else False,  # Set default bank account
+                'default_party_id': self.party_id.id,  # Set the default party (supplier)
             },
         }
 
@@ -190,15 +200,16 @@ class SupplierInvoice(models.Model):
         # Get the necessary accounts
         expense_account = self.env['vighnahar_agro.account'].search([('account_type', '=', 'expense')], limit=1)
         liability_account = self.env['vighnahar_agro.account'].search([('account_type', '=', 'liability')], limit=1)
-        tax_account = self.env['vighnahar_agro.account'].search([('account_type', '=', 'tax')], limit=1)
+        # ← replace generic tax lookup with your Purchase Tax (Input VAT) account:
+        purchase_tax_account = self.env['vighnahar_agro.account'].search([('code', '=', '2101')], limit=1)
 
         # Raise an error if any necessary account is missing
         if not expense_account:
             raise ValidationError("Expense account is missing. Please configure it in the chart of accounts.")
         if not liability_account:
             raise ValidationError("Liability account is missing. Please configure it in the chart of accounts.")
-        if not tax_account:
-            raise ValidationError("Tax account is missing. Please configure it in the chart of accounts.")
+        if not purchase_tax_account:
+            raise ValidationError("Purchase Tax (Input VAT) account (code 2101) is missing. Please configure it.")
         
         # Initialize lists for journal items
         journal_items = []
@@ -229,7 +240,7 @@ class SupplierInvoice(models.Model):
             if tax_id:
                 journal_items.append((0, 0, {
                     'entry_id': journal_entry.id,
-                    'account_id': tax_account.id,
+                    'account_id': purchase_tax_account.id,
                     'party_id': self.party_id.id,
                     'debit': tax_amount,
                     'credit': 0.0,
@@ -266,14 +277,14 @@ class SupplierInvoiceLine(models.Model):
 
     invoice_id = fields.Many2one('vighnahar_agro.supplier_invoice', string='Invoice', ondelete='cascade')
     uom_category_id = fields.Many2one('vighnahar_agro.uom_category', related='product_id.category_id', string='UOM Category')
-    product_category_id = fields.Many2one('vighnahar_agro.product_category', string='Product Category', domain="[('id', 'in', available_product_category_ids)]")
-    product_id = fields.Many2one('vighnahar_agro.product', string='Product', domain="[('product_category_id', '=', product_category_id)]")
+    product_category_id = fields.Many2one('vighnahar_agro.product_category', string='Product Category', domain="[('id', 'in', available_product_category_ids)]" , ondelete='cascade')
+    product_id = fields.Many2one('vighnahar_agro.product', string='Product', domain="[('product_category_id', '=', product_category_id)]" , ondelete='cascade')
     quantity = fields.Float(string='Quantity', digits=(16, 4))
-    uom_id = fields.Many2one('vighnahar_agro.uom', string='UOM', domain="[('category_id', '=', uom_category_id)]")
+    uom_id = fields.Many2one('vighnahar_agro.uom', string='UOM', domain="[('category_id', '=', uom_category_id)]" , ondelete='cascade')
     price = fields.Float(string='Unit Price', store=True, required = True)
     
     converted_quantity = fields.Float(string='Converted Quantity', digits=(16, 4), compute='_compute_converted_quantity', store=True)
-    converted_uom_id = fields.Many2one('vighnahar_agro.uom', string='Converted UOM', compute='_compute_converted_quantity', store=True)
+    converted_uom_id = fields.Many2one('vighnahar_agro.uom', string='Converted UOM', compute='_compute_converted_quantity', store=True , ondelete='cascade')
     available_product_category_ids = fields.Many2many('vighnahar_agro.product_category', compute='_compute_available_product_categories')
     
     # Field to select taxes
@@ -323,6 +334,7 @@ class SupplierInvoiceLine(models.Model):
             category_ids = product_ids.mapped('product_category_id')
             line.available_product_category_ids = category_ids
 
+
     @api.onchange('product_id', 'invoice_id.party_id')
     def _onchange_product_id(self):
         """Set the price and UOM from supplier info if available; otherwise, use product cost price and default UOM."""
@@ -350,14 +362,42 @@ class SupplierPayment(models.Model):
     amount = fields.Float(string="Amount", required=True)
     payment_method = fields.Selection([
         ('cash', 'Cash'),
-        ('bank', 'Bank'),
+        ('bank', 'Bank Transfer'),
         ('cheque', 'Cheque'),
         ('online', 'Online')
     ], string="Payment Method", required=True, default='cash')
-    invoice_id = fields.Many2one('vighnahar_agro.supplier_invoice', string='Supplier Invoice', required=True)
-    state = fields.Selection([('draft', 'Draft'), ('paid', 'Paid')], string="Payment Status", default='draft')
-    bank_account_id = fields.Many2one('vighnahar_agro.bank_account', string = "Bank Account")
+    invoice_id = fields.Many2one('vighnahar_agro.supplier_invoice', string='Supplier Invoice', required=True , ondelete='cascade')
+    state = fields.Selection([('draft', 'Draft'), ('paid', 'Paid'), ('cancel', 'Cancelled')], string="Payment Status", default='draft')
+    party_id = fields.Many2one('vighnahar_agro.party', string="Party")
+    bank_account_id = fields.Many2one('vighnahar_agro.bank_account', string = "Bank Account" , ondelete='cascade',domain="[('party_id', '=', party_id)]")
+    
+    
+    # New field to store the QR code
+    qr_code_image = fields.Image(string="Payment QR Code", compute='_generate_qr_code', store=True)
 
+    @api.depends('payment_method', 'bank_account_id.upi_id', 'amount')
+    def _generate_qr_code(self):
+        for record in self:
+            if record.payment_method == 'online' and record.bank_account_id and record.bank_account_id.upi_id:
+                # Generate the UPI URI with amount included
+                upi_uri = f"upi://pay?pa={record.bank_account_id.upi_id}&am={record.amount}&cu=INR&tn=Payment%20for%20Invoice%20{record.invoice_id.name}"
+                
+                # Generate QR code
+                qr = qrcode.QRCode(version=1, error_correction=qrcode.constants.ERROR_CORRECT_L, box_size=10, border=4)
+                qr.add_data(upi_uri)
+                qr.make(fit=True)
+                img = qr.make_image(fill_color="black", back_color="white")
+
+                # Convert the image to base64 and store in the field
+                buffer = BytesIO()
+                img.save(buffer, format="PNG")
+                qr_code_image_base64 = base64.b64encode(buffer.getvalue())
+                buffer.close()
+
+                # Store the QR code in the field
+                record.qr_code_image = qr_code_image_base64
+            else:
+                record.qr_code_image = False
     @api.model
     def create(self, vals):
         if vals.get('name', 'New') == 'New':
@@ -365,15 +405,57 @@ class SupplierPayment(models.Model):
         return super(SupplierPayment, self).create(vals)
 
     def action_pay(self):
-        """Update the payment status to 'paid' and reflect the payment amount"""
-        self.state = 'paid'
-        self.invoice_id.payment_ids |= self  # Link payment to invoice
-        # Optionally, update invoice total paid amount
-        paid_amount = sum(payment.amount for payment in self.invoice_id.payment_ids if payment.state == 'paid')
-        self.invoice_id.paid_amount = paid_amount
+        self.ensure_one()
 
-        
-    
+        if self.payment_method == 'online':
+            
+            # Check if the bank account has a valid UPI ID
+            if not self.bank_account_id or not self.bank_account_id.upi_id:
+                raise ValidationError("Online payment requires a bank account with a UPI ID.")
+            
+            # Generate the QR code and open the wizard to display it
+            return {
+                'name': 'UPI Payment QR Code',
+                'type': 'ir.actions.act_window',
+                'res_model': 'vighnahar_agro.supplier_payment_qr_wizard',
+                'view_mode': 'form',
+                'view_id': self.env.ref('vighnahar_agro.view_supplier_payment_qr_wizard_form').id,
+                'target': 'new',
+                'context': {
+                    'default_payment_id': self.id,
+                    'default_qr_code_image': self.qr_code_image,
+                    'default_amount': self.amount
+                    
+                }
+            }
+        elif self.payment_method == 'bank':
+            # Pass bank details to the wizard for bank payment method
+            return {
+                'name': 'Bank Payment Details',
+                'type': 'ir.actions.act_window',
+                'res_model': 'vighnahar_agro.supplier_payment_bank_wizard',
+                'view_mode': 'form',
+                'view_id': self.env.ref('vighnahar_agro.view_supplier_payment_bank_wizard_form').id,
+                'target': 'new',
+                'context': {
+                    'default_payment_id': self.id,
+                    'default_bank_name': self.bank_account_id.banks_id.name,
+                    'default_account_number': self.bank_account_id.name,
+                    'default_branch': self.bank_account_id.branch,
+                    'default_ifsc_code': self.bank_account_id.ifsc_code,
+                    'default_bank_holder_name': self.bank_account_id.party_id.name,  # Bank Holder Name
+                    'default_amount': self.amount,  # Amount to pay
+                    'default_invoice_number': self.invoice_id.name,
+                }
+            }
+        else:
+            # If payment_method is anything else, update the payment status directly
+            self.state = 'paid'
+            self.invoice_id.payment_ids |= self  # Link payment to invoice
+            # Optionally, update the invoice's total paid amount
+            paid_amount = sum(payment.amount for payment in self.invoice_id.payment_ids if payment.state == 'paid')
+            self.invoice_id.paid_amount = paid_amount
+            
     
     
     @api.model
@@ -386,3 +468,113 @@ class SupplierPayment(models.Model):
                 res['bank_account_id'] = invoice.party_id.bank_account_ids[:1].id  # Get first bank account
         
         return res
+
+
+class SupplierPaymentQRCodeWizard(models.TransientModel):
+    _name = 'vighnahar_agro.supplier_payment_qr_wizard'
+    _description = 'Supplier Payment QR Code Wizard'
+    
+    payment_id = fields.Many2one('vighnahar_agro.supplier_payment', string="Supplier Payment")
+    qr_code_image = fields.Image(string="Payment QR Code")
+    amount = fields.Float(string="Amount")
+    
+    @api.model
+    def default_get(self, fields):
+        res = super(SupplierPaymentQRCodeWizard, self).default_get(fields)
+
+        # Set the QR code image from the context (generated in the SupplierPayment model)
+        if 'default_qr_code_image' in self.env.context:
+            res['qr_code_image'] = self.env.context.get('default_qr_code_image')
+
+        return res
+    
+    def action_done(self):
+        # Update the payment state to 'paid'
+        self.payment_id.state = 'paid'
+        # Show success animation
+        return {
+            'name': 'Payment Successful',
+            'type': 'ir.actions.act_window',
+            'res_model': 'vighnahar_agro.payment_success_wizard',
+            'view_mode': 'form',
+            'view_id': self.env.ref('vighnahar_agro.view_payment_success_wizard_form').id,
+            'target': 'new',
+            'context': {
+                'default_payment_amount': self.amount,
+                'default_payment_method': 'UPI Payment',
+            }
+        }
+
+    def action_cancel(self):
+        # Update the payment state to 'cancel' when Cancel is clicked
+        self.payment_id.state = 'cancel'
+        # Close the wizard
+        return {'type': 'ir.actions.act_window_close'}
+    
+    
+
+class SupplierPaymentBankWizard(models.TransientModel):
+    _name = 'vighnahar_agro.supplier_payment_bank_wizard'
+    _description = 'Supplier Payment Bank Wizard'
+
+    # Add fields to capture bank details in the wizard
+    payment_id = fields.Many2one('vighnahar_agro.supplier_payment', string="Supplier Payment")
+    bank_name = fields.Char(string="Bank Name")
+    account_number = fields.Char(string="Account Number")
+    branch = fields.Char(string="Branch")
+    ifsc_code = fields.Char(string="IFSC Code")
+    bank_holder_name = fields.Char(string="Bank Holder Name")  # Bank Holder Name field
+    amount = fields.Float(string="Amount to Pay")  # Amount to Pay field
+    invoice_number = fields.Char(string="Invoice Number")  # Invoice Number field
+
+    def action_done(self):
+        # Update payment state and link to invoice
+        self.payment_id.state = 'paid'
+        # Show success animation
+        return {
+            'name': 'Payment Successful',
+            'type': 'ir.actions.act_window',
+            'res_model': 'vighnahar_agro.payment_success_wizard',
+            'view_mode': 'form',
+            'view_id': self.env.ref('vighnahar_agro.view_payment_success_wizard_form').id,
+            'target': 'new',
+            'context': {
+                'default_payment_amount': self.amount,
+                'default_payment_method': 'Bank Transfer',
+            }
+        }
+    
+    def action_cancel(self):
+        """Set the payment state to 'cancel' when Cancel is clicked and close the wizard."""
+        self.payment_id.state = 'cancel'
+        return {'type': 'ir.actions.act_window_close'}
+
+    @api.model
+    def default_get(self, fields):
+        res = super(SupplierPaymentBankWizard, self).default_get(fields)
+        
+        # Retrieve the bank details, holder name, amount, and invoice number from context
+        if 'default_bank_name' in self.env.context:
+            res['bank_name'] = self.env.context.get('default_bank_name')
+        if 'default_account_number' in self.env.context:
+            res['account_number'] = self.env.context.get('default_account_number')
+        if 'default_branch' in self.env.context:
+            res['branch'] = self.env.context.get('default_branch')
+        if 'default_ifsc_code' in self.env.context:
+            res['ifsc_code'] = self.env.context.get('default_ifsc_code')
+        if 'default_bank_holder_name' in self.env.context:
+            res['bank_holder_name'] = self.env.context.get('default_bank_holder_name')  # Populate Bank Holder Name
+        if 'default_amount' in self.env.context:
+            res['amount'] = self.env.context.get('default_amount')  # Populate Amount to Pay
+        if 'default_invoice_number' in self.env.context:
+            res['invoice_number'] = self.env.context.get('default_invoice_number')  # Populate Invoice Number
+
+        return res
+    
+    
+class PaymentSuccessWizard(models.TransientModel):
+    _name = 'vighnahar_agro.payment_success_wizard'
+    _description = 'Payment Success Animation Wizard'
+
+    payment_amount = fields.Float(string="Amount Paid", readonly=True)
+    payment_method = fields.Char(string="Payment Method", readonly=True)

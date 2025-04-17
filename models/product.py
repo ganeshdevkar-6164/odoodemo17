@@ -10,7 +10,7 @@ class Product(models.Model):
     image = fields.Binary(string='Product Image')
     can_be_sold = fields.Boolean(string='Can be Sold')
     can_be_purchased = fields.Boolean(string='Can be Purchased')
-    is_service = fields.Boolean(string='Service')
+    
     
     
     
@@ -73,11 +73,15 @@ class Product(models.Model):
     #for Purchase (Supplier Info Line)
     supplier_info_ids = fields.One2many('vighnahar_agro.supplier_info', 'product_id', string='Supplier Info')
     
-    #for Sales (Customer Info Line)
-    customer_info_ids = fields.One2many('vighnahar_agro.customer_info', 'product_id', string='Supplier Info')
-   
-   
-   
+    #for Sales (Customer Info)
+    # Optional Products (Upsell & Cross-Sell)
+    optional_product_ids = fields.Many2many(
+        'vighnahar_agro.product',
+        'vighnahar_agro_product_optional_rel',
+        'product_id', 'optional_product_id',
+        string='Optional Products',
+        help="Recommended when adding to cart."
+    )
    
     
 class AttributeLine(models.Model):
@@ -106,18 +110,9 @@ class SupplierInfo(models.Model):
     company_id = fields.Many2one('res.company', string='Company')
     
     
-class CUstomerInfo(models.Model):
-    _name = 'vighnahar_agro.customer_info'
-    _description = 'Customer Info'
+
     
     
-    product_id = fields.Many2one('vighnahar_agro.product', string='Product')
-    party_id = fields.Many2one('vighnahar_agro.party', string='Vendor')
-    price = fields.Float(string='Price')
-    delay = fields.Integer(string='Delivery Lead Time')
-    uom_id = fields.Many2one('vighnahar_agro.uom', string='Unit of Measure')
-    min_qty = fields.Float(string='Minimal Quantity')
-    company_id = fields.Many2one('res.company', string='Company')
     
     
     

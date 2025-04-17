@@ -54,8 +54,12 @@
         <field name="arch" type="xml">
             <tree>
                 <field name="name"/>
+                <field name="ifsc_code"/>
+                <field name="branch"/>
                 <field name="banks_id"/>
                 <field name="party_id"/>
+                <field name="upi_id"/>
+
             </tree>
         </field>
     </record>
@@ -69,8 +73,12 @@
                 <sheet>
                     <group>
                         <field name="name"/>
+                        <field name="ifsc_code"/>
+                        <field name="branch"/>
                         <field name="banks_id"/>
                         <field name="party_id"/>
+                        <field name="upi_id"/>
+                        <field name="qr_code_image" widget="image" class="oe_avatar"/>
                     </group>
                 </sheet>
             </form>

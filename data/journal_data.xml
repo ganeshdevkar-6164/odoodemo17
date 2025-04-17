@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+
+        <!-- Journal for Customer Invoices -->
+        <record id="journal_customer_invoice" model="vighnahar_agro.journal">
+            <field name="name">Customer Invoice</field>
+            <field name="code">CI</field>
+            <field name="type">sale</field>
+            <field name="account_id" ref="account_receivable"/>
+        </record>
+
+        <!-- Journal for Vendor Bills -->
+        <record id="journal_vendor_bill" model="vighnahar_agro.journal">
+            <field name="name">Vendor Bill</field>
+            <field name="code">VB</field>
+            <field name="type">purchase</field>
+            <field name="account_id" ref="account_payable"/>
+        </record>
+
+        <record id="journal_labor_payment" model="vighnahar_agro.journal">
+            <field name="name">Labor Payment</field>
+            <field name="code">LP</field>
+            <field name="type">purchase</field>
+            <field name="account_id" ref="account_payable"/>
+        </record>
+
+    </data>
+</odoo>
+
