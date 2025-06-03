@@ -42,7 +42,7 @@
                     <field name="date"/>
                     <field name="party_id"/>
                     <field name="payment_method"/>
-                    
+                    <field name="utr_number"/>
                     <field name="journal_id"/>
                     <field name="amount" sum="amount"/>
                     <field name="state" widget="badge" decoration-success="state == 'paid'"
@@ -71,6 +71,7 @@
                     <group>
                         <field name="qr_code_image" widget="image" readonly="1"/>
                         <field name="amount" readonly="1"/>
+                        <field name="utr_number"/>
                     </group>
                     <footer>
                         <button name="action_done" string="Done" type="object" class="btn-primary"/>

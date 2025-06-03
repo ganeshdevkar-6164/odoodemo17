@@ -142,6 +142,7 @@
                 <field name="amount" sum="Amount"/>
                 <field name="state" widget="badge" decoration-success="state == 'paid'"
                                                    decoration-info="state == 'draft'"/>
+                <field name="utr_number"/>
             </tree>
         </field>
     </record>
@@ -152,27 +153,35 @@
         <field name="model">vighnahar_agro.supplier_payment</field>
         <field name="arch" type="xml">
             <form string="Supplier Payment">
+                <header>
+                    <button name="action_pay" string="Create Payment" type="object" class="btn-primary"
+                            invisible="state != 'draft'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,paid"/>
+                </header>
                 <sheet>
+                    <widget name="web_ribbon" title="Paid" 
+                        invisible="state != 'paid'" 
+                        bg_color="text-bg-success" />
+                    <widget name="web_ribbon" title="Cancelled" 
+                        invisible="state != 'cancel'" 
+                        bg_color="text-bg-danger" />
                     <group>
                         <group>
                             <field name="name"/>
                             <field name="payment_date"/>
                             <field name="amount"/>
                             <field name="bank_account_id" invisible="payment_method not in ('bank', 'online')" />
+                            
                         </group>
                         <group>
                             <field name="party_id"/>
                             <field name="payment_method"/>
                             <field name="invoice_id" string="Memo" readonly="1"/>
-                            <field name="state"/>
                             
                         </group> 
                     </group>
                 </sheet>
-                <footer>
-                    <button name="action_pay" string="Create Payment" type="object" class="btn-primary"/>
-                    <button string="Cancel" class="btn-default" special="cancel"/>
-                </footer>
+                
             </form>
         </field>
     </record>
@@ -194,12 +203,13 @@
                 <group>
                     <field name="qr_code_image" widget='image' readonly="1"/>
                     <field name="amount" readonly="1"/>
+                    <field name="utr_number"/>
                 </group>
                 <footer>
                     <!-- Done Button to mark the payment as 'paid' -->
                     <button string="Done" type="object" name="action_done" class="btn-primary"/>
                     <!-- Cancel Button to close the wizard -->
-                    <button string="Cancel" class="btn-secondary" special="cancel" />
+                    <button name="action_cancel" type="object" string="Cancel" class="btn-secondary"/>
                 </footer>
             </form>
         </field>
@@ -209,7 +219,7 @@
         <field name="name">supplier.payment.bank.wizard.form</field>
         <field name="model">vighnahar_agro.supplier_payment_bank_wizard</field>
         <field name="arch" type="xml">
-            <form string="Bank Payment Details">
+            <form string="Bank Payment Details" window_title="">
                 <group>
                     <group>
                         <field name="payment_id" readonly="1"/>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
-    <template id="report_customer_invoice_template" name="Customer Invoice Template">
+    <template id="report_customer_invoice" name="Customer Invoice Template">
         <t t-call="web.html_container">
             <head>
                 <meta charset="UTF-8"/>
@@ -38,14 +38,14 @@
                             <!-- Header Section -->
                             <div class="header-section" style="text-align: center; padding-bottom: 20px; 
                                 border-bottom: 1px solid #000; position: relative;">
-                                <img t-att-src="'http://localhost:8069/vighnahar_agro/static/src/img/logo.png'" 
+                                <img t-att-src="'https://i.postimg.cc/KcgJ5mjt/Logo.png'"
                                      alt="Logo" style="max-height: 100px; max-width: 150px; position: absolute; left: 0px;"/>
                                 <h3>Shree Vighnahar Prasanna</h3>
                                 <h1>Vighnahar Agro</h1>
                                 <div style="position: absolute; right:0px; bottom:25; font-size:16px;">
                                     <h3>Shree Vaibhav .V. Kavde</h3>
                                     <p >Mobile: 9766512238, 8767200000</p>
-                                    <p>post: Ozar, Tal - Junnar, Dist - Pune</p>
+                                    <p>Post: Ozar, Tal - Junnar, Dist - Pune</p>
                                 </div>
                             </div>
                             
@@ -99,7 +99,7 @@
                             <div class="footer-section" style="border-top: 1px solid #000; font-weight:bold;
                                  margin-top:100px; width: 100%;">
                                 <p style="text-align: left;">Thank You!</p>
-                                <p style="text-align: right;">Signature</p>
+                                <p style="text-align: right; padding-right:5%">Signature</p>
                             </div>
                         </div>
                     </t>

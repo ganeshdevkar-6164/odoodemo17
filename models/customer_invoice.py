@@ -1,14 +1,17 @@
 from odoo import models, fields, api, _
+from odoo.tools.translate import _
+from odoo.tools import format_date
 from odoo.exceptions import UserError, ValidationError
 from datetime import datetime
 import requests
 import logging
 _logger = logging.getLogger(__name__)
-
+import base64
 
 
 class CustomerInvoice(models.Model):
     _name = 'vighnahar_agro.customer_invoice'
+    _inherit = ['mail.thread', 'mail.activity.mixin']
     _description = 'Customer Invoice'
     _order = "id desc"
 
@@ -17,7 +20,7 @@ class CustomerInvoice(models.Model):
     party_id = fields.Many2one('vighnahar_agro.party', string="Party", required=True, domain=[('is_customer', '=', True)])
     date = fields.Datetime(string="Invoice Date", default=fields.Datetime.now)
     
-    invoice_type = fields.Selection([('regular', 'Regular Invoice'), ('percentage', 'Downpayment(Percentage)'), ('fixed_amount', 'Downpayment(Fixed Amount)')], string='Invoice Type', default='regular')
+    invoice_type = fields.Selection([('regular', 'Regular Invoice'), ('percentage', 'Downpayment(Percentage)'), ('fixed_amount', 'Downpayment(Fixed Amount)')], string='Invoice Type', default='regular', required=True)
     # total_amount = fields.Float(string='Total Amount', compute='_compute_total_amount', store=True)
     state = fields.Selection([('draft', 'Draft'), ('invoice', 'Invoice'), ('cancel', 'Cancel'), ('payment', 'In Payment'),('downpayment','Downpayment'),('paid','Paid')], string='Status', default='draft', required=True)
     warehouse_id = fields.Many2one('vighnahar_agro.warehouse', string = "Warehouse", required=True , ondelete='cascade')
@@ -42,6 +45,52 @@ class CustomerInvoice(models.Model):
     def _compute_remaining_amount(self):
         for record in self:
             record.remaining_amount = record.total_amount - record.downpayment
+    
+    @api.model
+    def create_invoice_report_action(self):
+        """Ensure the report action and external ID exist."""
+        report_name = 'vighnahar_agro.report_invoice_custom'
+        external_id = 'action_report_invoice_custom'
+        module_name = 'vighnahar_agro'
+
+        Report = self.env['ir.actions.report'].sudo()
+        ModelData = self.env['ir.model.data'].sudo()
+
+        # Check if external ID exists
+        model_data = ModelData.search([
+            ('name', '=', external_id),
+            ('module', '=', module_name),
+            ('model', '=', 'ir.actions.report'),
+        ], limit=1)
+
+        if model_data:
+            _logger.info("Report external ID already exists.")
+            return
+
+        # Try to find report by report_name
+        existing_report = Report.search([('report_name', '=', report_name)], limit=1)
+
+        if not existing_report:
+            # Create the report action if not found
+            existing_report = Report.create({
+                'name': 'Customer Invoice Report',
+                'model': 'vighnahar_agro.customer_invoice',
+                'report_type': 'qweb-pdf',
+                'report_name': report_name,
+                'print_report_name': "'Customer Invoice - %s' % (object.name)",
+            })
+            _logger.info("Created report action: %s", existing_report)
+
+        # Now register the external ID
+        ModelData.create({
+            'name': external_id,
+            'model': 'ir.actions.report',
+            'module': module_name,
+            'res_id': existing_report.id,
+            'noupdate': True,
+        })
+        _logger.info("Created external ID for report action: %s", external_id)
+    
     
     @api.model_create_multi
     def create(self, vals_list):
@@ -114,7 +163,7 @@ class CustomerInvoice(models.Model):
             
             self._update_physical_inventory_stock()
             
-            self._send_invoice_email(rec)  # Send email after invoice creation
+            # rec.send_invoice_email()
     
     def _create_journal_entry(self):
         # Create a new journal entry
@@ -201,41 +250,54 @@ class CustomerInvoice(models.Model):
         self.write({'journal_item_ids': journal_items})
         journal_entry.post_entry()
 
+    def send_invoice_email(self):
+        for invoice in self:
+            if not invoice.party_id.email:
+                raise UserError("Customer does not have an email address.")
 
-    def _send_invoice_email(self, rec):
-        """Send the invoice email to the customer."""
-        if rec.party_id.email:
-            # Dynamically creating the email content
-            subject = f"Invoice {rec.name} for your order"
-            body = f"""
-            <p>Dear {rec.party_id.name},</p>
-            <p>We are pleased to inform you that your invoice for {rec.name} is ready.</p>
-            <p><strong>Invoice Date:</strong> {rec.date}</p>
-            <p><strong>Total Amount:</strong> {rec.total_amount}</p>
-            <p>Please make the payment at your earliest convenience.</p>
-            <p>Thank you,</p>
-            <p>Vighnahar Agro</p>
+            # ✅ Get the report action
+            report_action = self.env.ref('vighnahar_agro.action_report_customer_invoice')
+
+            # ✅ Correct way to render QWeb PDF for custom model
+            pdf_content, content_type = self.env['ir.actions.report']._render_qweb_pdf(
+                report_ref=report_action,
+                res_ids=[invoice.id]
+            )
+
+            # Create PDF attachment
+            attachment = self.env['ir.attachment'].create({
+                'name': f'Invoice_{invoice.name}.pdf',
+                'type': 'binary',
+                'datas': base64.b64encode(pdf_content),
+                'res_model': invoice._name,
+                'res_id': invoice.id,
+                'mimetype': 'application/pdf',
+            })
+
+            # Compose the HTML email body
+            body_html = f"""
+                <p>Dear {invoice.party_id.name},</p>
+                <p>Thank you for your business. Please find your invoice attached below:</p>
+                <p><strong>Invoice Number:</strong> {invoice.name}<br/>
+                <strong>Total Amount:</strong> ₹{invoice.total_amount:.2f}</p>
+                <p>Please contact us if you have any questions regarding this invoice.</p>
+                <p>Thanks,<br/>
+                Vighnahar Agro</p>
             """
-            
-            # Prepare the email
+
+            # Send email
             mail_values = {
-                'subject': subject,
-                'body_html': body,
-                'email_from': self.env.user.email or 'info@yourcompany.com',  # Sender email
-                'email_to': rec.party_id.email,  # Recipient email
-                # 'partner_ids': [(4, rec.party_id.id)],  # Add partner (customer) as recipient
+                'subject': f'Invoice {invoice.name}',
+                'body_html': body_html,
+                'email_to': invoice.party_id.email,
+                'attachment_ids': [(6, 0, [attachment.id])],
+                'auto_delete': True,
             }
-            
-            # Send the email
+
             mail = self.env['mail.mail'].create(mail_values)
             mail.send()
 
-            _logger.info(f"Invoice email sent to {rec.party_id.email} for Invoice: {rec.name}")
-        else:
-            _logger.warning(f"Customer does not have a contact email set for Invoice: {rec.name}")
-            
-            
-            
+        
     def _update_physical_inventory_stock(self):
         """ Update physical inventory stock when the invoice is created. """
         for rec in self:
@@ -266,7 +328,7 @@ class CustomerInvoice(models.Model):
                 else:
                     raise UserError(_("Product: %s not found in warehouse: %s" % (line.product_id.name, rec.warehouse_id.name)))
                 
-    #send whatsapp message using ultramsg api and payment_notification_date           
+    # send whatsapp message using ultramsg api and payment_notification_date           
     def send_whatsapp_message(self, phone_number, message):
         """ Function to send WhatsApp message using UltraMsg API """
         instance_id = 'instance107303'  # Replace with your instance ID
@@ -347,7 +409,9 @@ class CustomerInvoice(models.Model):
     def init(self):
         """ Initialize method to create the cron job when the module is installed """
         super(CustomerInvoice, self).init()
-        self.create_cron_job()       
+        self.create_cron_job() 
+        self.create_invoice_report_action()
+      
     
             
             
@@ -388,7 +452,35 @@ class CustomerInvoice(models.Model):
             rec.state = 'cancel'
     
    
-    
+    # def ensure_invoice_report_action(self):
+    #     report_name = 'vighnahar_agro.report_invoice_custom'
+    #     external_id = 'action_report_invoice_custom'
+
+    #     Report = self.env['ir.actions.report'].sudo()
+    #     existing = Report.search([('report_name', '=', report_name)], limit=1)
+
+    #     if existing:
+    #         _logger.info("Report action already exists: %s", existing.id)
+    #         return existing
+
+    #     new_action = Report.create({
+    #         'name': 'Customer Invoice Report',
+    #         'model': 'vighnahar_agro.customer_invoice',
+    #         'report_type': 'qweb-pdf',
+    #         'report_name': report_name,
+    #         'print_report_name': "'Customer Invoice - %s' % (object.name)",
+    #     })
+
+    #     self.env['ir.model.data'].sudo().create({
+    #         'name': external_id,
+    #         'model': 'ir.actions.report',
+    #         'module': 'vighnahar_agro',
+    #         'res_id': new_action.id,
+    #         'noupdate': True,
+    #     })
+
+    #     _logger.info("Manually created report action: %s", new_action.id)
+    #     return new_action
 
 
 class CustomerInvoiceLine(models.Model):
@@ -398,7 +490,7 @@ class CustomerInvoiceLine(models.Model):
     customer_invoice_id = fields.Many2one('vighnahar_agro.customer_invoice', string='Invoice', ondelete='cascade')
     uom_category_id = fields.Many2one('vighnahar_agro.uom_category', related='product_id.category_id', string='UOM Category')
     product_category_id = fields.Many2one('vighnahar_agro.product_category', string='Product Category', domain="[('id', 'in', available_product_category_ids)]", ondelete='cascade')
-    product_id = fields.Many2one('vighnahar_agro.product', string='Product', domain="[('product_category_id', '=', product_category_id)]", required=True, ondelete='cascade')
+    product_id = fields.Many2one('vighnahar_agro.product', string='Product', domain="[('product_category_id', '=', product_category_id), ('can_be_sold', '=', True)]", ondelete='cascade')
     
     quantity = fields.Float(string='Quantity', digits=(16, 4))
     uom_id = fields.Many2one('vighnahar_agro.uom', string='UOM', domain="[('category_id', '=', uom_category_id)]", ondelete='cascade')
@@ -588,6 +680,22 @@ class DownpaymentWizard(models.TransientModel):
             # Show only fixed_amount field and hide the percentage field
             self.percentage = 0.0  # Reset percentage when invoice type is fixed_amount
             
+    @api.constrains('percentage', 'fixed_amount')
+    def _check_downpayment_values(self):
+        for wizard in self:
+            if wizard.invoice_type == 'percentage':
+                if wizard.percentage < 1:
+                    raise ValidationError("Downpayment percentage must be at least 1%.")
+                elif wizard.percentage > 100:
+                    raise ValidationError("Downpayment percentage cannot exceed 100%. Please enter a valid amount.")
+            elif wizard.invoice_type == 'fixed_amount':
+                total = wizard.customer_invoice_id.total_amount
+                if wizard.fixed_amount < 1:
+                    raise ValidationError("Downpayment amount must be one or greater.")
+                elif wizard.fixed_amount > total:
+                    raise ValidationError("Downpayment amount cannot exceed the total invoice amount of ₹ {:.2f}.".format(total))
+
+            
     def action_create_payment(self):
         """
         This method is called to create the payment based on the downpayment amount.
@@ -606,7 +714,7 @@ class DownpaymentWizard(models.TransientModel):
         if not downpayment_product:
             downpayment_product = self.env['vighnahar_agro.product'].create({
                 'name': 'Downpayment',
-                'product_type': 'service',  # assuming it's a service product
+                'product_type': 'service',  # assuming it's  a service product
             })
 
         # Create a payment line for the downpayment product
@@ -644,3 +752,4 @@ class DownpaymentWizard(models.TransientModel):
             'res_id': payment.id,
             'target': 'current',
         }
+    

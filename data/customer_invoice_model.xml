@@ -1,0 +1,8 @@
+<odoo>
+  <data noupdate="1">
+    <record id="model_vighnahar_agro_customer_invoice" model="ir.model">
+        <field name="name">Customer Invoice</field>
+        <field name="model">vighnahar_agro.customer_invoice</field>
+    </record>
+  </data>
+</odoo>

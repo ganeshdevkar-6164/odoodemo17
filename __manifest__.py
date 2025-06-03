@@ -7,8 +7,10 @@
     'data': [
         'views/menu_items.xml',
         'security/ir.model.access.csv',
+        'views/supplier_payment_wizard_views.xml',
         'data/sequence.xml',
         'data/account_data.xml',
+        'data/customer_invoice_model.xml',
         'data/journal_data.xml',
         'views/product_views.xml',
         'views/supplier_invoice_views.xml',
@@ -20,10 +22,9 @@
         'views/bank_views.xml',
         'views/accounts_views.xml', 
         'views/taxes_views.xml', 
-        'report/customer_invoice_templates.xml',
         'report/report.xml',
-        
-        
+        'report/customer_invoice_templates.xml',
+
     ],
     'assets': {
         'web.assets_backend': [
@@ -32,6 +33,7 @@
             'vighnahar_agro/static/src/fonts/NotoSansDevanagari-Regular.ttf',
             'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css',
             'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css',
+            'vighnahar_agro/static/src/js/payment_success_animation.js',
         ],
 
     },

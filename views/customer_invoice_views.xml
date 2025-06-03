@@ -12,6 +12,9 @@
                     <button name="%(action_report_customer_invoice)d" string="Print" 
                             type="action" class="btn-primary" 
                             invisible="state != 'invoice' and state != 'downpayment' and state != 'paid'" />
+                    <button name="send_invoice_email" type="object" string="Send Email"
+                        class="btn-primary" 
+                        invisible="state != 'invoice' and state != 'downpayment' and state != 'paid'" />
                     <button name="action_payment" type="object" string="Payment" 
                             invisible="state != 'invoice' and state != 'downpayment'" 
                             class="oe_highlight"/>
@@ -189,14 +192,14 @@
 
     <!-- Payment Action -->
     <record id="action_payment" model="ir.actions.act_window">
-        <field name="name">Payments</field>
+        <field name="name">Customer Payments</field>
         <field name="res_model">vighnahar_agro.payment</field>
         <field name="view_mode">tree,form</field>
         <field name="view_id" ref="view_payment_tree"/>
     </record>
 
     <!-- Menu Item for Payments -->
-    <menuitem id="menu_payment" name="Payments" parent="menu_customer" action="action_payment"/>
+    <menuitem id="menu_payment" name="Customer Payments" parent="menu_customer" action="action_payment"/>
 
     <!-- Downpayment Wizard -->
     <record id="view_downpayment_wizard_form" model="ir.ui.view">
@@ -218,6 +221,4 @@
         </field>
     </record>
 
-    
-    
 </odoo>

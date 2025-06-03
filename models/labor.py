@@ -19,7 +19,7 @@ class LaborPayment(models.Model):
     date = fields.Date(string='Payment Date', default=fields.Date.today)
     payment_method = fields.Selection([
         ('cash', 'Cash'),
-        ('bank', 'Bank'),
+        ('bank', 'Bank Transfer'),
         ('cheque', 'Cheque'),
         ('online', 'Online')
     ], string="Payment Method", required=True, default='cash')
@@ -39,7 +39,7 @@ class LaborPayment(models.Model):
     amount = fields.Float(string='Amount', required=True)
     bank_account_id = fields.Many2one('vighnahar_agro.bank_account', string = "Bank Account", domain="[('party_id', '=', party_id)]")
     
-    
+    utr_number = fields.Char(string="UTR/Transaction ID", help="Enter the UTR after payment")
     
      # Computed field to generate QR code image for online payment
     qr_code_image = fields.Image(string="Payment QR Code", compute='_generate_qr_code', store=True)
@@ -173,6 +173,11 @@ class LaborPayment(models.Model):
 
             # Mark payment as paid
             rec.state = 'paid'
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'show_payment_success_animation_only',
+            }
+            
 
 
 
@@ -183,6 +188,14 @@ class LaborPaymentQRCodeWizard(models.TransientModel):
     payment_id = fields.Many2one('vighnahar_agro.labor_payment', string="Labor Payment")
     qr_code_image = fields.Image(string="Payment QR Code")
     amount = fields.Float(string="Amount")
+    utr_number = fields.Char(string="UTR/Transaction ID", help="Enter the UTR after payment")
+    
+    # Corrected UTR validation (numeric and 12 characters long)
+    def _validate_utr(self, utr_number):
+        # Ensure it's numeric and exactly 12 characters long
+        if not utr_number or len(utr_number) != 12 or not utr_number.isdigit():
+            raise ValidationError("Invalid UTR number. It should be 12 digits long and numeric.")
+        return True
 
     @api.model
     def default_get(self, fields):
@@ -196,8 +209,20 @@ class LaborPaymentQRCodeWizard(models.TransientModel):
         return res
 
     def action_done(self):
+        self._validate_utr(self.utr_number)
+
+        # After validation, set the payment state to 'paid'
         self.payment_id.state = 'paid'
-        return {'type': 'ir.actions.act_window_close'}
+
+        # Store the UTR number in the payment record
+        self.payment_id.utr_number = self.utr_number
+        
+        
+
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'show_payment_success_and_close',
+        }
 
     def action_cancel(self):
         self.payment_id.state = 'cancel'
@@ -236,7 +261,11 @@ class LaborPaymentBankWizard(models.TransientModel):
 
     def action_done(self):
         self.payment_id.state = 'paid'
-        return {'type': 'ir.actions.act_window_close'}
+
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'show_payment_success_and_close',
+        }
 
     def action_cancel(self):
         self.payment_id.state = 'cancel'  # <-- Error occurs here

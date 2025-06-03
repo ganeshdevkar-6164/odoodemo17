@@ -1,12 +1,13 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <odoo>
+  <data>
     <record id="action_report_customer_invoice" model="ir.actions.report">
         <field name="name">Customer Invoice</field>
         <field name="model">vighnahar_agro.customer_invoice</field>
         <field name="report_type">qweb-pdf</field>
-        <field name="report_name">vighnahar_agro.report_customer_invoice_template</field>
-        <field name="report_file">vighnahar_agro.report_customer_invoice_template</field>
+        <field name="report_name">vighnahar_agro.report_customer_invoice</field>
         <field name="binding_model_id" ref="model_vighnahar_agro_customer_invoice"/>
         <field name="binding_type">report</field>
     </record>
+  </data>
 </odoo>

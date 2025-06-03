@@ -7,7 +7,7 @@ class Product(models.Model):
     
     name = fields.Char(string='Product Name', required=True)
     description = fields.Text(string='Description')
-    image = fields.Binary(string='Product Image')
+    image = fields.Image(string="Product Image", max_width=1024, max_height=1024)
     can_be_sold = fields.Boolean(string='Can be Sold')
     can_be_purchased = fields.Boolean(string='Can be Purchased')
     
@@ -20,8 +20,14 @@ class Product(models.Model):
     product_type = fields.Selection([('consumable','Consumable'),
                                      ( 'service','Service'), 
                                      ('product','Storable Product')], string='Product Type',default = 'product', required=True)
-    sales_price = fields.Float(string='Sales Price')
-    cost_price = fields.Float(string='Cost Price')
+    sales_price = fields.Float(string='Sales Price', currency_field='currency_id')
+    cost_price = fields.Float(string='Cost Price', currency_field='currency_id')
+    currency_id = fields.Many2one(
+        'res.currency',
+        string='Currency',
+        required=True,
+        default=lambda self: self.env.company.currency_id.id
+    )
     product_category_id = fields.Many2one('vighnahar_agro.product_category', string='Product Category')
     category_id = fields.Many2one('vighnahar_agro.uom_category', string='Category')
     uom_id = fields.Many2one('vighnahar_agro.uom' , string = "Unit Of Measures", domain="[('category_id', '=', category_id)]")
@@ -60,8 +66,7 @@ class Product(models.Model):
     volume_uom_id = fields.Many2one('vighnahar_agro.uom', string='Volume Unit of Measure')
     tracking = fields.Selection([('none','No Tracking'),
                                 ('serial','By Unique Serial Number'),
-                                ('lot','By Lots'),
-                                ('package','By Package')], string='Tracking', default = 'none')
+                                ('lot','By Lots')], string='Tracking', default = 'none')
 
     
     
@@ -108,14 +113,3 @@ class SupplierInfo(models.Model):
     uom_id = fields.Many2one('vighnahar_agro.uom', string='Unit of Measure')
     min_qty = fields.Float(string='Minimal Quantity')
     company_id = fields.Many2one('res.company', string='Company')
-    
-    
-
-    
-    
-    
-    
-    
-
-    
-    

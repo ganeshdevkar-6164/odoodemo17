@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Inherit the wizard form view -->
+    <template id="supplier_payment_wizard_form_inherit" inherit_id="vighnahar_agro.view_supplier_payment_bank_wizard_form">
+        <xpath expr="//form" position="attributes">
+            <attribute name="t-on-close-wizard">action_close</attribute>
+        </xpath>
+    </template>
+</odoo>

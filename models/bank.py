@@ -61,9 +61,3 @@ class BankAccount(models.Model):
         for record in self:
             bank_name = record.banks_id.name if record.banks_id else "No Bank"
             record.display_name = f"{record.name} - {bank_name}"
-            
-    
-    
-
-            
- 

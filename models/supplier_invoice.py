@@ -3,6 +3,10 @@ from odoo.exceptions import ValidationError
 import qrcode
 from io import BytesIO
 import base64
+import re
+import logging
+
+_logger = logging.getLogger(__name__)
 
 class SupplierInvoice(models.Model):
     _name = 'vighnahar_agro.supplier_invoice'
@@ -127,7 +131,7 @@ class SupplierInvoice(models.Model):
             'res_model': 'vighnahar_agro.supplier_payment',
             'view_mode': 'form',
             'view_id': self.env.ref('vighnahar_agro.view_supplier_payment_form').id,
-            'target': 'new',  # Open the form in a modal
+            'target': 'current',  # Open the form in a modal
             'context': {
                 'default_invoice_id': self.id,  # Set the default invoice
                 'default_amount': remaining_amount,  # Set the default amount to be paid
@@ -184,6 +188,7 @@ class SupplierInvoice(models.Model):
         
         self.payment_status = 'pending'
         self.state = 'post'
+
 
 
     def _create_journal_entry(self):
@@ -278,7 +283,7 @@ class SupplierInvoiceLine(models.Model):
     invoice_id = fields.Many2one('vighnahar_agro.supplier_invoice', string='Invoice', ondelete='cascade')
     uom_category_id = fields.Many2one('vighnahar_agro.uom_category', related='product_id.category_id', string='UOM Category')
     product_category_id = fields.Many2one('vighnahar_agro.product_category', string='Product Category', domain="[('id', 'in', available_product_category_ids)]" , ondelete='cascade')
-    product_id = fields.Many2one('vighnahar_agro.product', string='Product', domain="[('product_category_id', '=', product_category_id)]" , ondelete='cascade')
+    product_id = fields.Many2one('vighnahar_agro.product', string='Product', domain="[('product_category_id', '=', product_category_id), ('can_be_purchased', '=', True)]" , ondelete='cascade')
     quantity = fields.Float(string='Quantity', digits=(16, 4))
     uom_id = fields.Many2one('vighnahar_agro.uom', string='UOM', domain="[('category_id', '=', uom_category_id)]" , ondelete='cascade')
     price = fields.Float(string='Unit Price', store=True, required = True)
@@ -371,6 +376,7 @@ class SupplierPayment(models.Model):
     party_id = fields.Many2one('vighnahar_agro.party', string="Party")
     bank_account_id = fields.Many2one('vighnahar_agro.bank_account', string = "Bank Account" , ondelete='cascade',domain="[('party_id', '=', party_id)]")
     
+    utr_number = fields.Char(string="UTR Number", help="UTR/Transaction ID after payment")
     
     # New field to store the QR code
     qr_code_image = fields.Image(string="Payment QR Code", compute='_generate_qr_code', store=True)
@@ -456,6 +462,13 @@ class SupplierPayment(models.Model):
             paid_amount = sum(payment.amount for payment in self.invoice_id.payment_ids if payment.state == 'paid')
             self.invoice_id.paid_amount = paid_amount
             
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'show_payment_success_and_close',
+            }
+    
+    
+            
 
 
 
@@ -482,6 +495,14 @@ class SupplierPaymentQRCodeWizard(models.TransientModel):
     payment_id = fields.Many2one('vighnahar_agro.supplier_payment', string="Supplier Payment")
     qr_code_image = fields.Image(string="Payment QR Code")
     amount = fields.Float(string="Amount")
+    utr_number = fields.Char(string="UTR/Transaction ID", help="Enter the UTR after payment")
+
+    # Corrected UTR validation (numeric and 12 characters long)
+    def _validate_utr(self, utr_number):
+        # Ensure it's numeric and exactly 12 characters long
+        if not utr_number or len(utr_number) != 12 or not utr_number.isdigit():
+            raise ValidationError("Invalid UTR number. It should be 12 digits long and numeric.")
+        return True
     
     @api.model
     def default_get(self, fields):
@@ -494,15 +515,32 @@ class SupplierPaymentQRCodeWizard(models.TransientModel):
         return res
     
     def action_done(self):
-        # Update the payment state to 'paid'
+        # Validate the UTR number before proceeding
+        self._validate_utr(self.utr_number)
+
+        # After validation, set the payment state to 'paid'
         self.payment_id.state = 'paid'
-        # Close the wizard
-        return {'type': 'ir.actions.act_window_close'}
+
+        # Store the UTR number in the payment record
+        self.payment_id.utr_number = self.utr_number  # Save UTR number to the payment record
+
+        # Link the payment to the invoice
+        self.payment_id.invoice_id.payment_ids |= self.payment_id  # Link payment to invoice
+
+        # Update the paid amount in the invoice
+        paid_amount = sum(p.amount for p in self.payment_id.invoice_id.payment_ids if p.state == 'paid')
+        self.payment_id.invoice_id.paid_amount = paid_amount
+
+        # Close the wizard and show success
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'show_payment_success_and_close',
+        }
+
 
     def action_cancel(self):
-        # Update the payment state to 'cancel' when Cancel is clicked
+        """Set the payment state to 'cancel' when Cancel is clicked and close the wizard."""
         self.payment_id.state = 'cancel'
-        # Close the wizard
         return {'type': 'ir.actions.act_window_close'}
     
     
@@ -522,9 +560,14 @@ class SupplierPaymentBankWizard(models.TransientModel):
     invoice_number = fields.Char(string="Invoice Number")  # Invoice Number field
 
     def action_done(self):
-        """Set the payment state to 'paid' and close the wizard."""
         self.payment_id.state = 'paid'
-        return {'type': 'ir.actions.act_window_close'}
+
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'show_payment_success_and_close',
+        }
+
+
     
     def action_cancel(self):
         """Set the payment state to 'cancel' when Cancel is clicked and close the wizard."""
@@ -551,4 +594,4 @@ class SupplierPaymentBankWizard(models.TransientModel):
         if 'default_invoice_number' in self.env.context:
             res['invoice_number'] = self.env.context.get('default_invoice_number')  # Populate Invoice Number
 
-        return res
+        return res 
